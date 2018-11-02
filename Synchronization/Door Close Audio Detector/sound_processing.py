@@ -5,7 +5,7 @@ import scipy.io.wavfile as wav
 """
 To run:
 
-python sound_processing.py </path/to/internal/audio> </path/to/external/audio> <time> <frac>
+python sound_processing.py </path/to/audio> <time> <frac>
 (recommended values of time and frac are 120 and 0.666667)
 
 Time represents the number of seconds of the video clip being taken. So 120 represents that the
@@ -104,23 +104,19 @@ def return_peak(path, time, frac):
 def execute():
     try:
         # input arguments
-        path_to_internal_audio = sys.argv[1]
-        path_to_external_audio = sys.argv[2]
-        time_v, frac_v = float(sys.argv[3]), float(sys.argv[4])
-    except Exception:
-        print("Sorry! You need path to internal audio, external audio path, time and then frac.")
-        print("Recommended values for time and frac are 120 and 0.6667.")
-        return [None, None]
+        path_to_audio = sys.argv[1]
+        time_v, frac_v = float(sys.argv[2]), float(sys.argv[3])
+    except Exception as e:
+        print("ERROR: ", e)
+        return
 
-    inside_peak = return_peak(path_to_internal_audio, time_v, frac_v)
-    outside_peak = return_peak(path_to_external_audio, time_v, frac_v)
-    difference = inside_peak - outside_peak
-
-    print("The last peak of external audio is at " + str(outside_peak) + " seconds.")
-    print("The last peak of internal audio is at " + str(inside_peak) + " seconds.\n")
-    print("The difference is " + str(difference) + " seconds.")
-
-    return [inside_peak, outside_peak, difference]
+    try:
+        # time to run!
+        peak = return_peak(path_to_audio, time_v, frac_v)
+        print(peak)
+    except Exception as e:
+        print("ERROR: ", e)
+    return
 
 execute()
 
