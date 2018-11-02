@@ -13,12 +13,12 @@ import cv2
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-video", "--video", required=True,
-	help="path to the input image")
+ap.add_argument("-v", "--video", required=True,
+	help="path to the input video")
 ap.add_argument("-d", "--door", required=True, help="which door")
 args = vars(ap.parse_args())
 
-cap = cv2.VideoCapture(args["image"])
+cap = cv2.VideoCapture(args["video"])
 frame_num = 0
 
 last_triangle = 0
@@ -87,4 +87,4 @@ while(cap.isOpened()):
 cap.release()
 cv2.destroyAllWindows()
 
-print(int(last_triangle) * (10**4))
+print((int(last_triangle + 1000)* (10**4))
