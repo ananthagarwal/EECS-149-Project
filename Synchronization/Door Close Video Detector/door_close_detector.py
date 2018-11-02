@@ -87,4 +87,4 @@ while(cap.isOpened()):
 cap.release()
 cv2.destroyAllWindows()
 
-print(last_triangle)
+print(int(last_triangle))
