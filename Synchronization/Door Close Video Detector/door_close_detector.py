@@ -80,7 +80,7 @@ while(cap.isOpened()):
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			break
 	except Exception as e:
-		print(e)
+		#print(e)
 		pass
 
 # When everything done, release the capture
