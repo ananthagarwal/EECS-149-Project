@@ -13,14 +13,14 @@ import cv2
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-video", "--video", required=True,
-	help="path to the input image")
+ap.add_argument("-v", "--video", required=True,
+	help="path to the input video")
 ap.add_argument("-d", "--door", required=True, help="which door")
 args = vars(ap.parse_args())
 
-cap = cv2.VideoCapture(args["image"])
+cap = cv2.VideoCapture(args["video"])
 frame_num = 0
-
+door_cnt = 0
 last_triangle = 0
 
 if args["door"] == "right":
@@ -68,15 +68,16 @@ while(cap.isOpened()):
 				# then draw the contours and the name of the shape on the image
 				c = c.astype("int")
 				
-				if len(approx) == 3 and cX > cmin and cX < cmax and cY > ymin and cv2.contourArea(c) > 250:
+				if len(approx) == 3 and cX > cmin and cX < cmax and cY > ymin and cv2.contourArea(c) > 400:
 					cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
 					cv2.putText(image, 'triangle', (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 					last_triangle = cap.get(0)
+					door_cnt+=1
 					# show the output image
 			except Exception as e:
 				#print(e)
 				pass
-		#cv2.imshow('frame',image)
+		cv2.imshow('frame',image)
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			break
 	except Exception as e:
@@ -86,5 +87,5 @@ while(cap.isOpened()):
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
-
-print(last_triangle)
+if door_cnt > 10:
+	print((int(last_triangle + 1000)* (10**6)))
