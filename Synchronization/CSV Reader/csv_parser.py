@@ -2,10 +2,13 @@ import csv
 import numpy as np
 from datetime import datetime
 
+print("hi")
+
 class BPS:
     def __init__(self, array):
         self.count, self.datetime, self.sum = process_title(array[0])
-        # print(self.datetime.time())
+        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9)
+        print(self.epoch)
         matrix_to_make = []
         for elem in array[1:]:
             matrix_to_make.append([float(data) for data in elem])
@@ -63,9 +66,24 @@ def extract_C(filename, frame_data):
                     j += 1
             i += 1   
 
+def extract_data(filename, frame_data):
+    data_to_return = []
+    with open(filename + '.csv') as csv_file:
+        csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
+        for elem in csv_reader:
+            if i > 1:
+                final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].epoch
+                diff = (curr - final) / (10 ** 9)
+                if abs(diff) < 0.05:
+                    data_to_return.append(elem)
+                    j += 1
+            i += 1
+    return data_to_return
+
 
 info, frames = extract_M('cole2_M')
 extract_C('cole2_C', frames)
+extract_data('vehicle_acc_ped_eng-2018-11-02-15-36-48_5', frames)
 
 
 
