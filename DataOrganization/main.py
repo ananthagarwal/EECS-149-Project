@@ -1,11 +1,26 @@
+import csv
+import numpy as np
+from datetime import datetime
 
-arr = []
+class BodyPressureSensorFrame():
+    def __init__(self, array):
+        self.count, self.datetime, self.sum = process_title(array[0])
+        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9)
+        matrix_to_make = []
+        for elem in array[1:]:
+            matrix_to_make.append([float(data) for data in elem])
+        self.mat = np.asmatrix(np.array(matrix_to_make))
+        self.cog = [0, 0]      
 
 class AcceleratorPedalFrame(obj):
 	def __init__(self, throttle_rate, throttle_pc, engine_rpm):
 		self.throttle_rate = throttle_rate
 		self.throttle_pc = throttle_pc
 		self.engine_rpm = engine_rpm
+
+	@classmethod
+	def parse(s):
+		
 
 class BrakeFrame(object):
 	def __init__(self, brake_torque_request, brake_torque_actual, vehicle_speed, brake_pedal_boo):
@@ -88,7 +103,9 @@ class VehicleWheelSpeeds(object):
 		
 
 class Frame(obj):
-	def __init__(self, time, body_pressure_frame, accelerator_pedal_frame, brake_frame, gear_frame, steering_wheel_frame, imu_frame, vehicle_suspension_frame, tire_pressure_frame, turn_signal_frame, vehicle_twist_frame, vehicle_wheel_speeds_frame):
+
+
+	def __init__(self, time=None, body_pressure_frame=None, accelerator_pedal_frame=None, brake_frame=None, gear_frame=None, steering_wheel_frame=None, imu_frame=None, vehicle_suspension_frame=None, tire_pressure_frame=None, turn_signal_frame=None, vehicle_twist_frame=None, vehicle_wheel_speeds_frame=None):
 		
 		self.time = time
 
@@ -113,3 +130,90 @@ class Frame(obj):
 		self.vehicle_twist = vehicle_twist_frame
 
 		self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
+
+
+
+# 11/2/2018 3:30:55.73 PM
+def process_title(arr):
+    frame_count = int(arr[0].split()[1])
+    frame_dt = arr[3].strip().split()
+    if "." in  frame_dt[1]:
+        time_string = frame_dt[0] + " " + frame_dt[1][:-2] + " " + frame_dt[1][-2:]
+    else:
+        time_string = frame_dt[0] + " " + frame_dt[1][:-2] + ".0 " + frame_dt[1][-2:] 
+    # print(time_string)
+    datetime_obj = datetime.strptime(time_string , "%m/%d/%Y %I:%M:%S.%f %p")
+    frame_sum = float(arr[-1])
+    return frame_count, datetime_obj, frame_sum
+
+def extract_body_pressure_sensor_M(filename):
+    with open(filename + '.csv') as csv_file:
+        csv_reader, i = csv.reader(csv_file, delimiter=','), 0
+        dataset_info, current_frame, all_frames = {}, [], []
+        for elem in csv_reader:
+            if i < 32:
+                if elem:
+                    raw_info = elem[0].split()
+                    dataset_info[raw_info[0]] = raw_info[1:]
+            else:
+                if elem:
+                    if elem[0] != '@@':
+                        current_frame.append(elem)
+                    else:
+                        all_frames.append(Frame(body_pressure=BodyPressureSensorFrame(current_frame)))
+                else:
+                    all_frames.append(Frame(body_pressure=BodyPressureSensorFrame(current_frame)))
+                    current_frame = []
+            i += 1
+
+    for a in all_frames:
+    	a.time = a.body_pressure.epoch
+
+    return dataset_info, all_frames
+
+def extract_body_pressure_sensor_C(filename, frame_data):
+    with open(filename + '.csv') as csv_file:
+        csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
+        for elem in csv_reader:
+            if i < 30:
+                if i == 11:
+                    row_measure = float(elem[0].split()[1])
+                if i == 12:
+                    col_measure = float(elem[0].split()[1])
+            else:
+                if elem[0] != '@@':
+                    row_curr, col_curr = float(elem[3]), float(elem[4])
+                    frame_data[j].body_pressure.cog = [int(round(row_curr / row_measure)),
+                        int(round(col_curr / row_measure))]
+                    j += 1
+            i += 1   
+
+def extract_data(filename, frame_data):
+    data_to_return = []
+    with open(filename + '.csv') as csv_file:
+        csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
+        for elem in csv_reader:
+            if i > 1:
+                final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].time
+                diff = (curr - final) / (10 ** 9)
+                if abs(diff) < 0.05:
+                    data_to_return.append(elem)
+                    j += 1
+            i += 1
+    return data_to_return
+
+
+info, frames = extract_body_pressure_sensor_M('cole2_M')
+extract_body_pressure_sensor_C('cole2_C', frames)
+
+
+acceleration_rows = extract_data('vehicle_acc_ped_eng-2018-11-02-15-36-48_5', frames)
+
+
+
+
+
+
+
+                
+            
