@@ -305,19 +305,28 @@ def extract_body_pressure_sensor_C(filename, frame_data):
 
 def extract_data(filename, frame_data):
     data_to_return = []
+    final_frames = []
     with open(filename + '.csv') as csv_file:
-        csv_reader, is_first, j = csv.reader(csv_file, delimiter=','), True, 0
-        for elem in csv_reader:
+        csv_reader, first_ind, i, j = csv.reader(csv_file, delimiter=','), 0, 0, 0
+        final_list = []
+        for elem_temp in csv_reader:
+            final_list.append(elem_temp)
+        while i < len(final_list):
+            elem = final_list[i]
             final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
-            if abs(diff) < 0.05:
+            if i == 0 and diff < -0.05:
+                j += 1
+            elif abs(diff) < 0.05:
                 data_to_return.append(elem)
-                j += 1
-                if is_first:
-                    is_first = False
-            elif diff < 0 and is_first:
-                j += 1
-    return data_to_return
+                if i == 0:
+                    print(final, curr)
+                    first_ind = j
+                i, j = i + 1, j + 1
+            else:
+                i += 1
+    final_frame_data = frame_data[first_ind:j]
+    return data_to_return, final_frame_data
 
 
 folder = 'cole1/'
@@ -331,7 +340,9 @@ files = {
 }
 
 for file in files:
-    rows = extract_data(folder + 'acc_ped_eng', frames)
-    for row, frame in zip(rows, frames):
+    rows, final_frames = extract_data(folder + 'acc_ped_eng', frames)
+    print(len(rows), len(final_frames))
+    print(rows[len(rows) - 1])
+    for row, frame in zip(rows, final_frames):
         AcceleratorPedalFrame.parse(row, frame)
 
