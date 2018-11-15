@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+import pickle
 from datetime import datetime
 
 class BodyPressureSensorFrame(object):
@@ -172,7 +173,37 @@ class Frame(object):
 
 		self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
 
+	def to_csv_row(self):
+		row = []
+		
+		#time
+		row.append(self.time.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'))
 
+		#body_pressure
+
+
+
+class Dataset(object):
+
+	def __init__(self, frames=[]):
+		self.frames = frames
+
+	def pickler(self, filename="dataset.p"):
+		return pickle.dumps(self, open(filename, 'wb'))
+
+	@classmethod
+	def loader(self, filename="dataset.p"):
+		return pickle.load( open( filename, "rb" ) )
+
+	def to_csv(self, filename="dataset.csv"):
+		with open("dataset.csv", 'w', newline='') as file:
+			filewriter = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			#todo csv column title
+			filewriter.writerow([])
+
+			for frame in self.frames:
+				filewriter.writerow(frame.to_csv_row)
 
 # 11/2/2018 3:30:55.73 PM
 def process_title(arr):
@@ -234,7 +265,7 @@ def extract_data(filename, frame_data):
     with open(filename + '.csv') as csv_file:
         csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
         for elem in csv_reader:
-            if i > 1:
+            if i > -1:
                 final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].time
                 diff = (curr - final) / (10 ** 9)
                 if abs(diff) < 0.05:
