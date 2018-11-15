@@ -2,7 +2,7 @@ import csv
 import numpy as np
 from datetime import datetime
 
-class BodyPressureSensorFrame():
+class BodyPressureSensorFrame(object):
     def __init__(self, array):
         self.count, self.datetime, self.sum = process_title(array[0])
         self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9)
@@ -12,14 +12,16 @@ class BodyPressureSensorFrame():
         self.mat = np.asmatrix(np.array(matrix_to_make))
         self.cog = [0, 0]      
 
-class AcceleratorPedalFrame(obj):
+class AcceleratorPedalFrame(object):
 	def __init__(self, throttle_rate, throttle_pc, engine_rpm):
 		self.throttle_rate = throttle_rate
 		self.throttle_pc = throttle_pc
 		self.engine_rpm = engine_rpm
 
 	@classmethod
-	def parse(s):
+	def parse(self, row, frame):
+		frame.accelerator_pedal = AcceleratorPedalFrame(float(row[7]), float(row[8]), int(row[9]))
+		print(row)
 		
 
 class BrakeFrame(object):
@@ -29,14 +31,29 @@ class BrakeFrame(object):
 		self.vehicle_speed = vehicle_speed
 		self.brake_pedal_boo = brake_pedal_boo
 
+	@classmethod
+	def parse(self, row, frame):
+		#TODO FIGURE THIS OUT
+		pass
+
 class GearFrame(object):
 	def __init__(self, gear):
 		self.gear = gear
+
+	@classmethod
+	def parse(self, row, frame):
+		frame.gear = GearFrame(int(row[8]))
 
 class SteeringWheelFrame(object):
 	def __init__(self, steering_wheel_angle, steering_wheel_torque):
 		self.steering_wheel_angle = steering_wheel_angle
 		self.steering_wheel_torque = steering_wheel_torque
+
+	@classmethod
+	def parse(self, row, frame):
+		#TODO FIGURE THIS OUT
+		frame.steering_wheel = SteeringWheelFrame()
+		pass
 		
 class IMUFrame(object):
 	def __init__(self, orientation_x, orientation_y, orientation_z, orientation_w, orientation_covariance, angular_velocity_x, angular_velocity_y, angular_velocity_z, angular_velocity_covariance, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z, linear_acceleration_covariance):
@@ -62,10 +79,18 @@ class IMUFrame(object):
 										'covariance': linear_acceleration_covariance
 									}
 
+	@classmethod
+	def parse(self, row, frame):
+		frame.imu = IMUFrame(float(row[8]), float(row[9]), float(row[10]), float(row[11]), [float(i) for i in row[12][1:-1].split(',')], float(row[14]), float(row[15]), float(row[16]), [float(i) for i in row[17][1:-1].split(',')], float(row[19]), float(row[20]), float(row[21]), [float(i) for i in row[22][1:-1].split(',')])
+
 class VehicleSuspensionFrame(object):
 	def __init__(self, ftont, rear):
 		self.front = front
 		self.rear = rear
+
+	@classmethod
+	def parse(self, row, frame):
+		frame.vehicle_suspension = VehicleSuspensionFrame(float(row[7]), float(row[8]))
 
 class TirePressureFrame(object):
 	def __init__(self, lf, rf, rr_orr, lr_olr, rr_irr, lr_ilr):
@@ -76,9 +101,17 @@ class TirePressureFrame(object):
 		self.rr_irr = rr_irr
 		self.lr_ilr = lr_ilr
 
+	@classmethod
+	def parse(self, row, frame):
+		frame.tire_pressure = TirePressureFrame(int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]))
+
 class TurnSignalFrame(object):
 	def __init__(self, value):
 		self.value = value
+
+	@classmethod
+	def parse(self, row, frame):
+		frame.turn_signal = TurnSignalFrame(int(row[8]))
 		
 class VehicleTwistFrame(object):
 	def __init__(self, linear_x, linear_y, linear_z, angular_x, angular_y, angular_z):
@@ -93,16 +126,24 @@ class VehicleTwistFrame(object):
 						'y': angular_y,
 						'z': angular_z,
 					}
+
+	@classmethod
+	def parse(self, row, frame):
+		frame.vehicle_twist = VehicleTwistFrame(float(row[9]), float(row[10]), float(row[11]), float(row[13]), float(row[14]), float(row[15]))
+
 	
 class VehicleWheelSpeeds(object):
-	def __init__(self, front_left, front_right, rear_left, rear_right'):
+	def __init__(self, front_left, front_right, rear_left, rear_right):
 		self.front_left = front_left
 		self.front_right = front_right
 		self.rear_left = rear_left
 		self.rear_right = rear_right
-		
+	
+	@classmethod
+	def parse(self, row, frame):
+		frame.vehicle_wheel_speeds = VehicleWheelSpeeds(float(row[7]), float(row[8]), float(row[9]), float(row[10]))
 
-class Frame(obj):
+class Frame(object):
 
 
 	def __init__(self, time=None, body_pressure_frame=None, accelerator_pedal_frame=None, brake_frame=None, gear_frame=None, steering_wheel_frame=None, imu_frame=None, vehicle_suspension_frame=None, tire_pressure_frame=None, turn_signal_frame=None, vehicle_twist_frame=None, vehicle_wheel_speeds_frame=None):
@@ -160,9 +201,9 @@ def extract_body_pressure_sensor_M(filename):
                     if elem[0] != '@@':
                         current_frame.append(elem)
                     else:
-                        all_frames.append(Frame(body_pressure=BodyPressureSensorFrame(current_frame)))
+                        all_frames.append(Frame(body_pressure_frame=BodyPressureSensorFrame(current_frame)))
                 else:
-                    all_frames.append(Frame(body_pressure=BodyPressureSensorFrame(current_frame)))
+                    all_frames.append(Frame(body_pressure_frame=BodyPressureSensorFrame(current_frame)))
                     current_frame = []
             i += 1
 
@@ -203,17 +244,21 @@ def extract_data(filename, frame_data):
     return data_to_return
 
 
-info, frames = extract_body_pressure_sensor_M('cole2_M')
-extract_body_pressure_sensor_C('cole2_C', frames)
+folder = 'cole1/'
+
+info, frames = extract_body_pressure_sensor_M(folder + 'cole_M')
+extract_body_pressure_sensor_C(folder + 'cole_C', frames)
 
 
-acceleration_rows = extract_data('vehicle_acc_ped_eng-2018-11-02-15-36-48_5', frames)
+files = {
+	'acc_ped_eng': AcceleratorPedalFrame
+}
 
+for file in files:
+	rows = extract_data(folder + file, frames)
 
+	print(rows)
 
+	for row, frame in zip(rows, frames):
+		AcceleratorPedalFrame.parse(row, frame)
 
-
-
-
-                
-            
