@@ -11,13 +11,19 @@ class BodyPressureSensorFrame(object):
         for elem in array[1:]:
             matrix_to_make.append([float(data) for data in elem])
         self.mat = np.asmatrix(np.array(matrix_to_make))
-        self.cog = [0, 0]      
+        self.cog = [0, 0]
+
+    def to_csv_row(self):
+    	return [str(self.mat), str(self.cog)]
 
 class AcceleratorPedalFrame(object):
 	def __init__(self, throttle_rate, throttle_pc, engine_rpm):
 		self.throttle_rate = throttle_rate
 		self.throttle_pc = throttle_pc
 		self.engine_rpm = engine_rpm
+
+	def to_csv_row(self):
+		return [str(self.throttle_rate), str(self.throttle_pc), str(self.engine_rpm)]	
 
 	@classmethod
 	def parse(self, row, frame):
@@ -32,6 +38,9 @@ class BrakeFrame(object):
 		self.vehicle_speed = vehicle_speed
 		self.brake_pedal_boo = brake_pedal_boo
 
+	def to_csv_row(self):
+		return [str(i) for i in [self.brake_torque_request, self.brake_torque_actual, self.vehicle_speed, self.brake_pedal_boo]]
+
 	@classmethod
 	def parse(self, row, frame):
 		#TODO FIGURE THIS OUT
@@ -41,6 +50,9 @@ class GearFrame(object):
 	def __init__(self, gear):
 		self.gear = gear
 
+	def to_csv_row(self):
+		return [str(self.gear)]
+
 	@classmethod
 	def parse(self, row, frame):
 		frame.gear = GearFrame(int(row[8]))
@@ -49,6 +61,9 @@ class SteeringWheelFrame(object):
 	def __init__(self, steering_wheel_angle, steering_wheel_torque):
 		self.steering_wheel_angle = steering_wheel_angle
 		self.steering_wheel_torque = steering_wheel_torque
+
+	def to_csv_row(self):
+		return [str(self.steering_wheel_angle), str(self.steering_wheel_torque)]
 
 	@classmethod
 	def parse(self, row, frame):
@@ -80,6 +95,9 @@ class IMUFrame(object):
 										'covariance': linear_acceleration_covariance
 									}
 
+	def to_csv_row(self):
+		return [str(i) for i in [self.orientation['x'], self.orientation['y'], self.orientation['z'], self.orientation['w'] self.orientation['covariance'], self.angular_velocity['x'], self.angular_velocity['y'], self.angular_velocity['z'], self.angular_velocity['covariance'], self.linear_acceleration['x'], self.linear_acceleration['y'], self.linear_acceleration['z'], self.linear_acceleration['covariance']]]
+
 	@classmethod
 	def parse(self, row, frame):
 		frame.imu = IMUFrame(float(row[8]), float(row[9]), float(row[10]), float(row[11]), [float(i) for i in row[12][1:-1].split(',')], float(row[14]), float(row[15]), float(row[16]), [float(i) for i in row[17][1:-1].split(',')], float(row[19]), float(row[20]), float(row[21]), [float(i) for i in row[22][1:-1].split(',')])
@@ -88,6 +106,9 @@ class VehicleSuspensionFrame(object):
 	def __init__(self, ftont, rear):
 		self.front = front
 		self.rear = rear
+
+	def to_csv_row(self):
+		return [str(self.front), str(self.rear)]
 
 	@classmethod
 	def parse(self, row, frame):
@@ -102,6 +123,9 @@ class TirePressureFrame(object):
 		self.rr_irr = rr_irr
 		self.lr_ilr = lr_ilr
 
+	def to_csv_row(self):
+		return [str(i) for i in [self.lf, self.rf, self.rr_orr, self.lr_olr, self.rr_irr, self.lr_ilr]]
+
 	@classmethod
 	def parse(self, row, frame):
 		frame.tire_pressure = TirePressureFrame(int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]))
@@ -109,6 +133,9 @@ class TirePressureFrame(object):
 class TurnSignalFrame(object):
 	def __init__(self, value):
 		self.value = value
+
+	def to_csv_row(self):
+		return [str(self.value)]
 
 	@classmethod
 	def parse(self, row, frame):
@@ -128,6 +155,9 @@ class VehicleTwistFrame(object):
 						'z': angular_z,
 					}
 
+	def to_csv_row(self):
+		return [str(i) for i in [self.linear['x'], self.linear['y'], self.linear['z'], self.angular['x'], self.angular['y'], self.angular['z']]]
+
 	@classmethod
 	def parse(self, row, frame):
 		frame.vehicle_twist = VehicleTwistFrame(float(row[9]), float(row[10]), float(row[11]), float(row[13]), float(row[14]), float(row[15]))
@@ -140,6 +170,9 @@ class VehicleWheelSpeeds(object):
 		self.rear_left = rear_left
 		self.rear_right = rear_right
 	
+	def to_csv_row(self):
+		return [str(i) for i in [self.front_left, self.front_right, self.rear_left, self.rear_right]]
+
 	@classmethod
 	def parse(self, row, frame):
 		frame.vehicle_wheel_speeds = VehicleWheelSpeeds(float(row[7]), float(row[8]), float(row[9]), float(row[10]))
@@ -178,8 +211,19 @@ class Frame(object):
 		
 		#time
 		row.append(self.time.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'))
+		row.extend(self.body_pressure.to_csv_row())
+		row.extend(self.accelerator_pedal.to_csv_row())
+		row.extend(self.brake.to_csv_row())
+		row.extend(self.gear.to_csv_row())
+		row.extend(self.steering_wheel.to_csv_row())
+		row.extend(self.imu.to_csv_row())
+		row.extend(self.vehicle_suspension.to_csv_row())
+		row.extend(self.tire_pressure.to_csv_row())
+		row.extend(self.turn_signal.to_csv_row())
+		row.extend(self.vehicle_twist.to_csv_row())
+		row.extend(self.vehicle_wheel_speeds.to_csv_row())
 
-		#body_pressure
+		return row
 
 
 
@@ -265,12 +309,12 @@ def extract_data(filename, frame_data):
     with open(filename + '.csv') as csv_file:
         csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
         for elem in csv_reader:
-            if i > -1:
-                final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].time
-                diff = (curr - final) / (10 ** 9)
-                if abs(diff) < 0.05:
-                    data_to_return.append(elem)
-                    j += 1
+
+            final, curr = (int(elem[0]) - 7*3600*(10**9)), frame_data[j].time
+            diff = (curr - final) / (10 ** 9)
+            if abs(diff) < 0.05:
+                data_to_return.append(elem)
+                j += 1
             i += 1
     return data_to_return
 
