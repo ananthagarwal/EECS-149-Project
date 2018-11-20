@@ -30,20 +30,31 @@ class AcceleratorPedalFrame(object):
         frame.accelerator_pedal = AcceleratorPedalFrame(float(row[7]), float(row[8]), float(row[9]))
         
 
-class BrakeFrame(object):
-    def __init__(self, brake_torque_request, brake_torque_actual, vehicle_speed, brake_pedal_boo):
-        self.brake_torque_request = brake_torque_request
-        self.brake_torque_actual = brake_torque_actual
-        self.vehicle_speed = vehicle_speed
+class BrakePedFrame(object):
+    def __init__(self, brake_pedal_boo):
         self.brake_pedal_boo = brake_pedal_boo
 
     def to_csv_row(self):
-        return [str(i) for i in [self.brake_torque_request, self.brake_torque_actual, self.vehicle_speed, self.brake_pedal_boo]]
+        return [str(i) for i in [self.brake_pedal_boo]]
 
     @classmethod
-    def parse(self, row, frame):
+    def parse(cls, row, frame):
         #TODO FIGURE THIS OUT
-        pass
+        frame.brake_ped = cls(str(row[7]))
+
+class BrakeTorqFrame(object):
+    def __init__(self, brake_torque_request, brake_torque_actual, vehicle_speed):
+        self.brake_torque_request = brake_torque_request
+        self.brake_torque_actual = brake_torque_actual
+        self.vehicle_speed = vehicle_speed
+
+    def to_csv_row(self):
+        return [str(i) for i in [self.brake_torque_request, self.brake_torque_actual, self.vehicle_speed]]
+
+    @classmethod
+    def parse(cls, row, frame):
+        #TODO FIGURE THIS OUT
+        frame.brake_torq = cls(float(row[7]), float(row[8]), float(row[9]))
 
 class GearFrame(object):
     def __init__(self, gear):
@@ -53,22 +64,30 @@ class GearFrame(object):
         return [str(self.gear)]
 
     @classmethod
-    def parse(self, row, frame):
-        frame.gear = GearFrame(int(row[8]))
+    def parse(cls, row, frame):
+        frame.gear = cls(int(row[8]))
 
-class SteeringWheelFrame(object):
-    def __init__(self, steering_wheel_angle, steering_wheel_torque):
-        self.steering_wheel_angle = steering_wheel_angle
+class SteeringTorqueFrame(object):
+    def __init__(self, steering_wheel_torque):
         self.steering_wheel_torque = steering_wheel_torque
 
     def to_csv_row(self):
-        return [str(self.steering_wheel_angle), str(self.steering_wheel_torque)]
+        return [str(self.steering_wheel_torque)]
 
     @classmethod
-    def parse(self, row, frame):
-        #TODO FIGURE THIS OUT
-        frame.steering_wheel = SteeringWheelFrame()
-        pass
+    def parse(cls, row, frame):
+        frame.steering_torq = cls(float(row[7]))
+
+class SteeringAngleFrame(object):
+    def __init__(self, steering_wheel_angle):
+        self.steering_wheel_angle = steering_wheel_angle
+
+    def to_csv_row(self):
+        return [str(self.steering_wheel_angle)]
+
+    @classmethod
+    def parse(cls, row, frame):
+        frame.steering_wheel = cls(float(row[7]))
         
 class IMUFrame(object):
     def __init__(self, orientation_x, orientation_y, orientation_z, orientation_w, orientation_covariance, angular_velocity_x, angular_velocity_y, angular_velocity_z, angular_velocity_covariance, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z, linear_acceleration_covariance):
@@ -102,7 +121,7 @@ class IMUFrame(object):
         frame.imu = IMUFrame(float(row[8]), float(row[9]), float(row[10]), float(row[11]), [float(i) for i in row[12][1:-1].split(',')], float(row[14]), float(row[15]), float(row[16]), [float(i) for i in row[17][1:-1].split(',')], float(row[19]), float(row[20]), float(row[21]), [float(i) for i in row[22][1:-1].split(',')])
 
 class VehicleSuspensionFrame(object):
-    def __init__(self, ftont, rear):
+    def __init__(self, front, rear):
         self.front = front
         self.rear = rear
 
@@ -127,7 +146,7 @@ class TirePressureFrame(object):
 
     @classmethod
     def parse(self, row, frame):
-        frame.tire_pressure = TirePressureFrame(int(row[7]), int(row[8]), int(row[9]), int(row[10]), int(row[11]), int(row[12]), int(row[13]))
+        frame.tire_pressure = TirePressureFrame(float(row[7]), float(row[8]), float(row[9]), float(row[10]), float(row[11]), float(row[12]), float(row[13]))
 
 class TurnSignalFrame(object):
     def __init__(self, value):
@@ -138,7 +157,7 @@ class TurnSignalFrame(object):
 
     @classmethod
     def parse(self, row, frame):
-        frame.turn_signal = TurnSignalFrame(int(row[8]))
+        frame.turn_signal = TurnSignalFrame(float(row[8]))
         
 class VehicleTwistFrame(object):
     def __init__(self, linear_x, linear_y, linear_z, angular_x, angular_y, angular_z):
@@ -179,7 +198,7 @@ class VehicleWheelSpeeds(object):
 class Frame(object):
 
 
-    def __init__(self, time=None, body_pressure_frame=None, accelerator_pedal_frame=None, brake_frame=None, gear_frame=None, steering_wheel_frame=None, imu_frame=None, vehicle_suspension_frame=None, tire_pressure_frame=None, turn_signal_frame=None, vehicle_twist_frame=None, vehicle_wheel_speeds_frame=None):
+    def __init__(self, time=None, body_pressure_frame=None, accelerator_pedal_frame=None, brake_ped_frame=None, brake_torq_frame=None, gear_frame=None, steering_torq_frame=None, steering_ang_frame=None, imu_frame=None, vehicle_suspension_frame=None, tire_pressure_frame=None, turn_signal_frame=None, vehicle_twist_frame=None, vehicle_wheel_speeds_frame=None):
         
         self.time = time
 
@@ -187,11 +206,15 @@ class Frame(object):
         
         self.accelerator_pedal = accelerator_pedal_frame
 
-        self.brake = brake_frame
+        self.brake_ped = brake_ped_frame
+
+        self.brake_torq = brake_torq_frame
 
         self.gear = gear_frame
 
-        self.steering_wheel = steering_wheel_frame
+        self.steering_torq = steering_torq_frame
+
+        self.steering_ang = steering_ang_frame
 
         self.imu = imu_frame
         
@@ -209,7 +232,8 @@ class Frame(object):
         row = []
         
         #time
-        row.append(self.time.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'))
+        row.append(str(self.body_pressure.datetime))
+        #Alternative: row.append(self.time.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'))
         row.extend(self.body_pressure.to_csv_row())
         row.extend(self.accelerator_pedal.to_csv_row())
         row.extend(self.brake.to_csv_row())
@@ -241,9 +265,6 @@ class Dataset(object):
     def to_csv(self, filename="dataset.csv"):
         with open("dataset.csv", 'w', newline='') as file:
             filewriter = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-            #todo csv column title
-            filewriter.writerow([])
 
             for frame in self.frames:
                 filewriter.writerow(frame.to_csv_row)
@@ -336,13 +357,26 @@ extract_body_pressure_sensor_C(folder + 'cole_C', frames)
 
 i = 0
 files = {
-    'acc_ped_eng': AcceleratorPedalFrame
+    'acc_ped_eng': AcceleratorPedalFrame,
+    'brake_ped': BrakePedFrame,
+    'brake_torq': BrakeTorqFrame,
+    'gear': GearFrame,
+    'imu_data_raw': IMUFrame,
+    'steering_ang': SteeringAngleFrame,
+    'steering_torq': SteeringTorqueFrame,
+    'suspension': VehicleSuspensionFrame,
+    'tire_press': TirePressureFrame
 }
 
-for file in files:
-    rows, final_frames = extract_data(folder + 'acc_ped_eng', frames)
+
+
+for file_name, class_obj in files.items():
+    rows, final_frames = extract_data(folder + file_name, frames)
+    
     print(len(rows), len(final_frames))
     print(rows[len(rows) - 1])
     for row, frame in zip(rows, final_frames):
-        AcceleratorPedalFrame.parse(row, frame)
+        class_obj.parse(row, frame)
 
+frames = Dataset(final_frames)
+frames.to_csv()
