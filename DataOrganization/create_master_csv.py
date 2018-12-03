@@ -282,7 +282,7 @@ class VehicleTwistFrame(object):
                             row[15]))
 
 
-class VehicleWheelSpeeds(object):
+class VehicleWheelSpeedsFrame(object):
     def __init__(self, front_left, front_right, rear_left, rear_right):
         self.front_left = front_left
         self.front_right = front_right
@@ -299,7 +299,7 @@ class VehicleWheelSpeeds(object):
 
     @classmethod
     def parse(cls, row, frame):
-        frame.vehicle_wheel_speeds = VehicleWheelSpeeds(
+        frame.vehicle_wheel_speeds = VehicleWheelSpeedsFrame(
             float(
                 row[7]), float(
                 row[8]), float(
@@ -469,6 +469,7 @@ def extract_body_pressure_sensor_c(filename, frame_data):
 
 def extract_data(filename, frame_data):
     data_to_return = []
+    first_ind_changed = False
     with open(filename + '.csv') as csv_file:
         # 11/30/18: Changed i, first_ind to =1, since i = 0 is header
         csv_reader, first_ind, i, j = csv.reader(
@@ -478,15 +479,15 @@ def extract_data(filename, frame_data):
             final_list.append(elem_temp)
         while i < len(final_list):
             elem = final_list[i]
-            final, curr = (int(elem[0]) - 7 * 3600 *
-                           (10**9)), frame_data[j].time
+            # Where did the 7 * 3600 * 10^9
+            final, curr = (int(elem[0]) - 7 * 3600 * (10**9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
             if i == 1 and diff < -0.05:
                 j += 1
             elif abs(diff) < 0.05:
                 data_to_return.append(elem)
-                if i == 1:
-                    print(final, curr)
+                print(final, curr)
+                if not first_ind_changed:
                     first_ind = j
                 i, j = i + 1, j + 1
             else:
@@ -507,21 +508,17 @@ files = {
     'tire_press': TirePressureFrame
 }
 
-
-def main():
-    extract_body_pressure_sensor_c(folder + 'cole_C', bps_frames)
-
-    for file_name, class_obj in files.items():
-        rows, final_frames = extract_data(folder + file_name, bps_frames)
-        # print(len(rows), len(final_frames))
-        # print(rows[len(rows) - 1])
-        for row, frame in zip(rows, final_frames):
-            class_obj.parse(row, frame)
-
-    frames = Dataset(final_frames)
-    frames.to_csv()
-
-
 folder = 'cole1/'
 info, bps_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
-main()
+
+extract_body_pressure_sensor_c(folder + 'cole_C', bps_frames)
+
+for file_name, class_obj in files.items():
+    rows, final_frames = extract_data(folder + file_name, bps_frames)
+
+    for k in range(len(rows)):
+        class_obj.parse(rows[k], final_frames[k])
+
+frames = Dataset(final_frames)
+frames.to_csv()
+
