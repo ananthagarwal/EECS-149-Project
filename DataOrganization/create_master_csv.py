@@ -363,9 +363,11 @@ class Frame(object):
         # %H:%M:%S.%f'))
         row.extend(self.body_pressure.to_csv_row())
         row.extend(self.accelerator_pedal.to_csv_row())
-        row.extend(self.brake.to_csv_row())
+        row.extend(self.brake_torq.to_csv_row())
+        row.extend(self.brake_ped.to_csv_row())
         row.extend(self.gear.to_csv_row())
-        row.extend(self.steering_wheel.to_csv_row())
+        row.extend(self.steering_ang.to_csv_row())
+        row.extend(self.steering_torq.to_csv_row())
         row.extend(self.imu.to_csv_row())
         row.extend(self.vehicle_suspension.to_csv_row())
         row.extend(self.tire_pressure.to_csv_row())
@@ -398,7 +400,7 @@ class Dataset(object):
                 quoting=csv.QUOTE_MINIMAL)
 
             for frame in self.frames:
-                file_writer.writerow(frame.to_csv_row)
+                file_writer.writerow(frame.to_csv_row())
 
 # 11/2/2018 3:30:55.73 PM
 
@@ -489,6 +491,7 @@ def extract_data(filename, frame_data):
                 print(final, curr)
                 if not first_ind_changed:
                     first_ind = j
+                    first_ind_changed = True
                 i, j = i + 1, j + 1
             else:
                 i += 1
@@ -505,7 +508,11 @@ files = {
     'steering_ang': SteeringAngleFrame,
     'steering_torq': SteeringTorqueFrame,
     'suspension': VehicleSuspensionFrame,
-    'tire_press': TirePressureFrame
+    'tire_press': TirePressureFrame,
+    'turn_sig': TurnSignalFrame,
+    'twist': VehicleTwistFrame,
+    'wheel_speeds': VehicleWheelSpeedsFrame,
+
 }
 
 folder = 'cole1/'
