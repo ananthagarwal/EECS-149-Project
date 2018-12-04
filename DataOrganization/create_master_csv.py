@@ -2,9 +2,11 @@ import csv
 import numpy as np
 import pickle
 from datetime import datetime
-
+np.set_printoptions(threshold=np.inf)
 
 class BodyPressureSensorFrame(object):
+    selected_columns = ["body_pressure_data", "center_of_gravity"]
+
     def __init__(self, array):
         '''
         :param array: format is [[Frame i, ..., date/time, ... Raw Sum][data (3, 0, 7, 18, 8, ...)][data (0, 2, 9. 17, ...)] ...]
@@ -21,10 +23,11 @@ class BodyPressureSensorFrame(object):
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [str(self.mat), str.epoch, str(self.cog)]
+        return [self.mat, self.cog]
 
 
 class AcceleratorPedalFrame(object):
+    selected_columns = ["throttle_rate", "throttle_pc", "engine_rpm"]
     def __init__(self, throttle_rate, throttle_pc, engine_rpm):
         self.throttle_rate = throttle_rate
         self.throttle_pc = throttle_pc
@@ -37,13 +40,16 @@ class AcceleratorPedalFrame(object):
     @classmethod
     def parse(cls, row, frame):
         frame.accelerator_pedal = AcceleratorPedalFrame(
-            float(
-                row[7]), float(
-                row[8]), float(
-                row[9]))
+            float(row[7]),
+            float(row[8]),
+            float(row[9])
+        )
+
 
 
 class BrakePedFrame(object):
+    selected_columns = ["brake_pedal_boo"]
+
     def __init__(self, brake_pedal_boo):
         self.brake_pedal_boo = brake_pedal_boo
 
@@ -57,6 +63,7 @@ class BrakePedFrame(object):
 
 
 class BrakeTorqFrame(object):
+    selected_columns = ["brake_torque_request", "brake_torque_actual", "vehicle_speed"]
     def __init__(
             self,
             brake_torque_request,
@@ -80,6 +87,7 @@ class BrakeTorqFrame(object):
 
 
 class GearFrame(object):
+    selected_columns = ["gear"]
     def __init__(self, gear):
         self.gear = gear
 
@@ -92,6 +100,7 @@ class GearFrame(object):
 
 
 class SteeringTorqueFrame(object):
+    selected_columns = ["steering_wheel_torque"]
     def __init__(self, steering_wheel_torque):
         self.steering_wheel_torque = steering_wheel_torque
 
@@ -104,6 +113,8 @@ class SteeringTorqueFrame(object):
 
 
 class SteeringAngleFrame(object):
+    selected_columns = ["steering_wheel_angle"]
+
     def __init__(self, steering_wheel_angle):
         self.steering_wheel_angle = steering_wheel_angle
 
@@ -112,10 +123,14 @@ class SteeringAngleFrame(object):
 
     @classmethod
     def parse(cls, row, frame):
-        frame.steering_wheel = cls(float(row[7]))
+        frame.steering_ang = cls(float(row[7]))
 
 
 class IMUFrame(object):
+    selected_columns = ["orientation_x", "orientation_y", "orientation_z", "orientation_w", "orientation_covariance",
+                "angular_velocity_x", "angular_velocity_y", "angular_velocity_z", "angular_velocity_covariance",
+                "linear_acceleration_x", "linear_acceleration_y", "linear_acceleration_z",
+                "linear_acceleration_covariance"]
     def __init__(
             self,
             orientation_x,
@@ -153,6 +168,7 @@ class IMUFrame(object):
             'covariance': linear_acceleration_covariance
         }
 
+
     def to_csv_row(self):
         return [
             str(i) for i in [
@@ -188,6 +204,7 @@ class IMUFrame(object):
 
 
 class VehicleSuspensionFrame(object):
+    selected_columns = ["front", "rear"]
     def __init__(self, front, rear):
         self.front = front
         self.rear = rear
@@ -202,6 +219,9 @@ class VehicleSuspensionFrame(object):
 
 
 class TirePressureFrame(object):
+    selected_columns = ["tire_press_lf", "tire_press_rf", "tire_press_rr_orr", "tire_press_lr_olr", "tire_press_rr_irr",
+                "tire_press_lr_ilr"]
+
     def __init__(self, lf, rf, rr_orr, lr_olr, rr_irr, lr_ilr):
         self.lf = lf
         self.rf = rf
@@ -233,6 +253,7 @@ class TirePressureFrame(object):
 
 
 class TurnSignalFrame(object):
+    selected_columns = ["value"]
     def __init__(self, value):
         self.value = value
 
@@ -245,6 +266,9 @@ class TurnSignalFrame(object):
 
 
 class VehicleTwistFrame(object):
+    selected_columns = ["twist_linear_x", "twist_linear_y", "twist_linear_z", "twist_angular_x", "twist_angular_y",
+                "twist_angular_z"]
+
     def __init__(
             self,
             linear_x,
@@ -288,6 +312,7 @@ class VehicleTwistFrame(object):
 
 
 class VehicleWheelSpeedsFrame(object):
+    selected_columns = ["front_left", "front_right", "rear_left", "rear_right"]
     def __init__(self, front_left, front_right, rear_left, rear_right):
         self.front_left = front_left
         self.front_right = front_right
@@ -359,6 +384,7 @@ class Frame(object):
 
         self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
 
+
     def to_csv_row(self):
         row = []
 
@@ -383,6 +409,7 @@ class Frame(object):
         return row
 
 
+
 class Dataset(object):
 
     def __init__(self, frames=[]):
@@ -391,19 +418,40 @@ class Dataset(object):
     def pickler(self, filename="dataset.p"):
         return pickle.dumps(self, open(filename, 'wb'))
 
+    def column_names_row(self):
+        column_names = []
+        column_names.extend(["timestamp"])
+
+        column_names.extend(BodyPressureSensorFrame.selected_columns)
+        column_names.extend(AcceleratorPedalFrame.selected_columns)
+        column_names.extend(BrakeTorqFrame.selected_columns)
+        column_names.extend(BrakePedFrame.selected_columns)
+        column_names.extend(GearFrame.selected_columns)
+        column_names.extend(SteeringAngleFrame.selected_columns)
+        column_names.extend(SteeringTorqueFrame.selected_columns)
+        column_names.extend(IMUFrame.selected_columns)
+        column_names.extend(VehicleSuspensionFrame.selected_columns)
+        column_names.extend(TirePressureFrame.selected_columns)
+        column_names.extend(TurnSignalFrame.selected_columns)
+        column_names.extend(VehicleTwistFrame.selected_columns)
+        column_names.extend(VehicleWheelSpeedsFrame.selected_columns)
+
+        return column_names
+
     @classmethod
     def loader(self, filename="dataset.p"):
         return pickle.load(open(filename, "rb"))
 
     def to_csv(self, filename="dataset.csv"):
-        # with open("dataset.csv", 'w', newline='') as file:
-        with open(filename, 'wb') as file:
+        with open(filename, 'w', newline='') as file:
+        # with open(filename, 'wb') as file: PYTHON2.7 ONLY
             file_writer = csv.writer(
                 file,
                 delimiter=',',
                 quotechar='"',
                 quoting=csv.QUOTE_MINIMAL)
 
+            file_writer.writerow(self.column_names_row())
             for frame in self.frames:
                 file_writer.writerow(frame.to_csv_row())
 
@@ -493,8 +541,17 @@ def extract_body_pressure_sensor_c(filename, frame_data):
 
 
 def extract_data(filename, frame_data):
-    data_to_return = []
-    first_ind_changed = False
+    """
+    @param filename             Name of vehicle sensor data csv to parse
+    @param frame_data           List of frames. Each frame corresponds to all synchronized sensor data
+ \
+    @return synch_vec_data
+
+
+    Outputs
+    """
+    sync_vec_data = []
+    sync_frame_data = []
     with open(filename + '.csv') as csv_file:
         # 11/30/18: Changed i, first_ind to =1, since i = 0 is header
         csv_reader, first_ind, i, j = csv.reader(
@@ -502,24 +559,22 @@ def extract_data(filename, frame_data):
         final_list = []
         for elem_temp in csv_reader:
             final_list.append(elem_temp)
-        while i < len(final_list):
+        while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
             # Where did the 7 * 3600 * 10^9
             final, curr = (int(elem[0]) - 7 * 3600 * (10**9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
-            if i == 1 and diff < -0.05:
+            print(diff)
+            if diff < -0.05:
                 j += 1
             elif abs(diff) < 0.05:
-                data_to_return.append(elem)
-                print(final, curr)
-                if not first_ind_changed:
-                    first_ind = j
-                    first_ind_changed = True
+                sync_vec_data.append(elem)
+                sync_frame_data.append(frame_data[j])
                 i, j = i + 1, j + 1
             else:
                 i += 1
-    final_frame_data = frame_data[first_ind:j]
-    return data_to_return, final_frame_data
+    print(len(sync_vec_data), len(sync_frame_data))
+    return sync_vec_data, sync_frame_data
 
 
 files = {
@@ -535,16 +590,15 @@ files = {
     'turn_sig': TurnSignalFrame,
     'twist': VehicleTwistFrame,
     'wheel_speeds': VehicleWheelSpeedsFrame,
-
 }
 
 folder = 'cole1/'
-info, bps_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
+info, final_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
 
-extract_body_pressure_sensor_c(folder + 'cole_C', bps_frames)
+extract_body_pressure_sensor_c(folder + 'cole_C', final_frames)
 
 for file_name, class_obj in files.items():
-    rows, final_frames = extract_data(folder + file_name, bps_frames)
+    rows, final_frames = extract_data(folder + file_name, final_frames)
 
     for k in range(len(rows)):
         class_obj.parse(rows[k], final_frames[k])
