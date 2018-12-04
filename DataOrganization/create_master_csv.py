@@ -6,17 +6,22 @@ from datetime import datetime
 
 class BodyPressureSensorFrame(object):
     def __init__(self, array):
+        '''
+        :param array: format is [[Frame i, ..., date/time, ... Raw Sum][data (3, 0, 7, 18, 8, ...)][data (0, 2, 9. 17, ...)] ...]
+        '''
         self.count, self.datetime, self.sum = process_title(array[0])
+        #
         self.epoch = ((self.datetime - datetime(1970, 1, 1)
                        ).total_seconds()) * (10 ** 9)
         matrix_to_make = []
+        # build a matrix containing all the data for ths frame.
         for elem in array[1:]:
             matrix_to_make.append([float(data) for data in elem])
         self.mat = np.asmatrix(np.array(matrix_to_make))
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [str(self.mat), str(self.cog)]
+        return [str(self.mat), str.epoch, str(self.cog)]
 
 
 class AcceleratorPedalFrame(object):
@@ -406,6 +411,11 @@ class Dataset(object):
 
 
 def process_title(arr):
+    '''
+    Extract frame number and sum and convert timestamp into format "%m/%d/%Y %I:%M:%S.%f %p"
+    :param arr: <class 'list'>: e.g. ['Frame 1', ' 0', '', ' 11/2/2018 1:46:08.83PM', '', '', 'Raw Sum=', '', '136309']
+    :return: frame_count, datetime_obj, frame_sum
+    '''
     frame_count = int(arr[0].split()[1])
     frame_dt = arr[3].strip().split()
     if "." in frame_dt[1]:
@@ -421,11 +431,17 @@ def process_title(arr):
 
 
 def extract_body_pressure_sensor_m(filename):
+    '''
+    :param filename: File containing BPS data
+    :return: dataset_info: header of filename (32 rows)
+    all_frames: list of Frames, each corresponding to a BPS frame from filename (each .1 seconds apart)
+    '''
     with open(filename + '.csv') as csv_file:
         csv_reader, i = csv.reader(csv_file, delimiter=','), 0
         dataset_info, current_frame, all_frames = {}, [], []
         for elem in csv_reader:
             if i < 32:
+                # Builds a dictionary structure of BPS metadata, e.g. DATA_TYPE: MOVIE, MAP_INDEX: 0
                 if elem:
                     raw_info = elem[0].split()
                     dataset_info[raw_info[0]] = raw_info[1:]
@@ -438,6 +454,7 @@ def extract_body_pressure_sensor_m(filename):
                             Frame(
                                 body_pressure_frame=BodyPressureSensorFrame(current_frame)))
                 else:
+                    # Finished finding all rows of a frame, so add a BodyPressureSensorFrame object to the list of objects.
                     all_frames.append(
                         Frame(
                             body_pressure_frame=BodyPressureSensorFrame(current_frame)))
@@ -451,6 +468,12 @@ def extract_body_pressure_sensor_m(filename):
 
 
 def extract_body_pressure_sensor_c(filename, frame_data):
+    '''
+    Since center of gravity data is in cm, convert to row and column indices
+    :param filename: CSV containing center of gravity data
+    :param frame_data:
+    :return:
+    '''
     with open(filename + '.csv') as csv_file:
         csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
         for elem in csv_reader:
