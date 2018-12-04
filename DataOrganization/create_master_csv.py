@@ -2,7 +2,7 @@ import csv
 import numpy as np
 import pickle
 from datetime import datetime
-
+np.set_printoptions(threshold=np.inf)
 
 class BodyPressureSensorFrame(object):
     def __init__(self, array):
@@ -16,7 +16,7 @@ class BodyPressureSensorFrame(object):
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [str(self.mat), str(self.cog)]
+        return [self.mat, self.cog]
 
 
 class AcceleratorPedalFrame(object):
@@ -107,7 +107,7 @@ class SteeringAngleFrame(object):
 
     @classmethod
     def parse(cls, row, frame):
-        frame.steering_wheel = cls(float(row[7]))
+        frame.steering_ang = cls(float(row[7]))
 
 
 class IMUFrame(object):
@@ -391,8 +391,8 @@ class Dataset(object):
         return pickle.load(open(filename, "rb"))
 
     def to_csv(self, filename="dataset.csv"):
-        # with open("dataset.csv", 'w', newline='') as file:
-        with open(filename, 'wb') as file:
+        with open(filename, 'w', newline='') as file:
+        # with open(filename, 'wb') as file: PYTHON2.7 ONLY
             file_writer = csv.writer(
                 file,
                 delimiter=',',
@@ -470,8 +470,17 @@ def extract_body_pressure_sensor_c(filename, frame_data):
 
 
 def extract_data(filename, frame_data):
-    data_to_return = []
-    first_ind_changed = False
+    """
+    @param filename             Name of vehicle sensor data csv to parse
+    @param frame_data           List of frames. Each frame corresponds to all synchronized sensor data
+ \
+    @return synch_vec_data
+
+
+    Outputs
+    """
+    sync_vec_data = []
+    sync_frame_data = []
     with open(filename + '.csv') as csv_file:
         # 11/30/18: Changed i, first_ind to =1, since i = 0 is header
         csv_reader, first_ind, i, j = csv.reader(
@@ -479,24 +488,22 @@ def extract_data(filename, frame_data):
         final_list = []
         for elem_temp in csv_reader:
             final_list.append(elem_temp)
-        while i < len(final_list):
+        while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
             # Where did the 7 * 3600 * 10^9
             final, curr = (int(elem[0]) - 7 * 3600 * (10**9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
-            if i == 1 and diff < -0.05:
+            print(diff)
+            if diff < -0.05:
                 j += 1
             elif abs(diff) < 0.05:
-                data_to_return.append(elem)
-                print(final, curr)
-                if not first_ind_changed:
-                    first_ind = j
-                    first_ind_changed = True
+                sync_vec_data.append(elem)
+                sync_frame_data.append(frame_data[j])
                 i, j = i + 1, j + 1
             else:
                 i += 1
-    final_frame_data = frame_data[first_ind:j]
-    return data_to_return, final_frame_data
+    print(len(sync_vec_data), len(sync_frame_data))
+    return sync_vec_data, sync_frame_data
 
 
 files = {
@@ -512,16 +519,15 @@ files = {
     'turn_sig': TurnSignalFrame,
     'twist': VehicleTwistFrame,
     'wheel_speeds': VehicleWheelSpeedsFrame,
-
 }
 
 folder = 'cole1/'
-info, bps_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
+info, final_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
 
-extract_body_pressure_sensor_c(folder + 'cole_C', bps_frames)
+extract_body_pressure_sensor_c(folder + 'cole_C', final_frames)
 
 for file_name, class_obj in files.items():
-    rows, final_frames = extract_data(folder + file_name, bps_frames)
+    rows, final_frames = extract_data(folder + file_name, final_frames)
 
     for k in range(len(rows)):
         class_obj.parse(rows[k], final_frames[k])
