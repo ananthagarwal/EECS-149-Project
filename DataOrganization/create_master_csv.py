@@ -7,7 +7,7 @@ from datetime import datetime
 
 np.set_printoptions(threshold=np.inf)
 
-ap = argparse.ArgumentParser(description="Master CSV generator. Example usage: python2.7 create_master_csv.py -f cole1 \
+ap = argparse.ArgumentParser(description="Master CSV/Pickle generator. Example usage: python2.7 create_master_csv.py -f cole1 \
 -b pressure-sensor/cole. MUST run bag2csv.py in cole1 first to create rosbag csvs to collate and synchronize.")
 ap.add_argument("-f", nargs=1, dest='folder',
                 help="Folder name of collated rosbags. If not specified, default is ./exp_rosbags/")
@@ -51,7 +51,7 @@ def merge_rosbag_csvs():
 
 
 class BodyPressureSensorFrame(object):
-    selected_columns = ["body_pressure_data", "center_of_gravity"]
+    selected_columns = ["epoch", "body_pressure_data", "center_of_gravity"]
 
     def __init__(self, array):
         '''
@@ -69,7 +69,7 @@ class BodyPressureSensorFrame(object):
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [self.mat, self.cog]
+        return [self.epoch, self.mat, self.cog]
 
 
 class AcceleratorPedalFrame(object):
@@ -464,8 +464,9 @@ class Dataset(object):
     def __init__(self, frames=[]):
         self.frames = frames
 
-    def pickler(self, filename="dataset.p"):
-        return pickle.dumps(self, open(filename, 'wb'))
+    def pickler(self, file_name="dataset.p"):
+        with open(file_name, 'wb') as p_file:
+            pickle.dump(self.frames, p_file, protocol=2)
 
     def column_names_row(self):
         column_names = []
@@ -670,3 +671,4 @@ for file_name, class_obj in files.items():
 
 frames = Dataset(final_frames)
 frames.to_csv(csv_path + "MASTER.csv")
+frames.pickler(csv_path + "MASTER.p")
