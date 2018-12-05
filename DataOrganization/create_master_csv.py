@@ -1,8 +1,53 @@
 import csv
 import numpy as np
+import os
 import pickle
+import argparse
 from datetime import datetime
+
 np.set_printoptions(threshold=np.inf)
+
+ap = argparse.ArgumentParser(description="Master CSV generator.")
+ap.add_argument("-f", nargs=1, dest='folder',
+                help="Folder name of collated rosbags. If not specified, default is ./exp_rosbags/")
+ap.add_argument("-b", nargs=1, dest='bps_name',
+                help="Prefix name of BPS sensor CSVs. If not specified, default is no prefix.")
+ap.add_argument("-c", nargs=1, dest='csv_folder',
+                help="Folder to place CSVs in. If not specified, default is ./exp_rosbags/CSVs/")
+ap.add_argument("-n", action="store_true", dest='no_merge',
+                help="Skip collating rosbag CSVs. If not specified, default false.")
+ap.add_argument("-r", action="store_true", dest='no_bag_convert',
+                help="Skip converting rosbags to CSVs. If not specified, default false.")
+
+args = ap.parse_args()
+"""
+Example usage:
+python2.7 create_master_csv.py -f cole1 -b cole -c CSVs
+Creates master CSV file dataset.csv containing synchronized data for all sensors in cole1.
+Name of BPS sensor CSVs is overriden from default "M.csv" and "C.csv" 
+to "cole_M.csv" and "cole_C.csv"
+"""
+
+
+def merge_rosbag_csvs():
+    data_categories = ["steering_ang", "steering_torq", "suspension", "tire_press", "acc_ped_eng", \
+                       "brake_ped", "brake_torq", "gear", "imu_data_raw", "twist", "wheel_speeds", "turn_sig"]
+    data_prefix = "vehicle_"
+
+    for category in data_categories:
+        master_csv = path_to_csvs + "/" + category + ".csv"
+        with open(master_csv, "a") as fout:
+            for input_folder in os.listdir(path_to_csvs):
+                if input_folder.startswith(b'.'):
+                    continue
+                csv_name = data_prefix + category + "-" + input_folder + ".csv"
+                file_path = path_to_csvs + "/" + input_folder + "/" + csv_name
+                if os.path.isfile(file_path):
+                    with open(file_path) as f:
+                        f.next()
+                        for line in f:
+                            fout.write(line)
+
 
 class BodyPressureSensorFrame(object):
     selected_columns = ["body_pressure_data", "center_of_gravity"]
@@ -28,6 +73,7 @@ class BodyPressureSensorFrame(object):
 
 class AcceleratorPedalFrame(object):
     selected_columns = ["throttle_rate", "throttle_pc", "engine_rpm"]
+
     def __init__(self, throttle_rate, throttle_pc, engine_rpm):
         self.throttle_rate = throttle_rate
         self.throttle_pc = throttle_pc
@@ -44,7 +90,6 @@ class AcceleratorPedalFrame(object):
             float(row[8]),
             float(row[9])
         )
-
 
 
 class BrakePedFrame(object):
@@ -64,6 +109,7 @@ class BrakePedFrame(object):
 
 class BrakeTorqFrame(object):
     selected_columns = ["brake_torque_request", "brake_torque_actual", "vehicle_speed"]
+
     def __init__(
             self,
             brake_torque_request,
@@ -88,6 +134,7 @@ class BrakeTorqFrame(object):
 
 class GearFrame(object):
     selected_columns = ["gear"]
+
     def __init__(self, gear):
         self.gear = gear
 
@@ -101,6 +148,7 @@ class GearFrame(object):
 
 class SteeringTorqueFrame(object):
     selected_columns = ["steering_wheel_torque"]
+
     def __init__(self, steering_wheel_torque):
         self.steering_wheel_torque = steering_wheel_torque
 
@@ -128,9 +176,10 @@ class SteeringAngleFrame(object):
 
 class IMUFrame(object):
     selected_columns = ["orientation_x", "orientation_y", "orientation_z", "orientation_w", "orientation_covariance",
-                "angular_velocity_x", "angular_velocity_y", "angular_velocity_z", "angular_velocity_covariance",
-                "linear_acceleration_x", "linear_acceleration_y", "linear_acceleration_z",
-                "linear_acceleration_covariance"]
+                        "angular_velocity_x", "angular_velocity_y", "angular_velocity_z", "angular_velocity_covariance",
+                        "linear_acceleration_x", "linear_acceleration_y", "linear_acceleration_z",
+                        "linear_acceleration_covariance"]
+
     def __init__(
             self,
             orientation_x,
@@ -168,7 +217,6 @@ class IMUFrame(object):
             'covariance': linear_acceleration_covariance
         }
 
-
     def to_csv_row(self):
         return [
             str(i) for i in [
@@ -205,6 +253,7 @@ class IMUFrame(object):
 
 class VehicleSuspensionFrame(object):
     selected_columns = ["front", "rear"]
+
     def __init__(self, front, rear):
         self.front = front
         self.rear = rear
@@ -220,7 +269,7 @@ class VehicleSuspensionFrame(object):
 
 class TirePressureFrame(object):
     selected_columns = ["tire_press_lf", "tire_press_rf", "tire_press_rr_orr", "tire_press_lr_olr", "tire_press_rr_irr",
-                "tire_press_lr_ilr"]
+                        "tire_press_lr_ilr"]
 
     def __init__(self, lf, rf, rr_orr, lr_olr, rr_irr, lr_ilr):
         self.lf = lf
@@ -247,13 +296,14 @@ class TirePressureFrame(object):
                 row[7]), float(
                 row[8]), float(
                 row[9]), float(
-                    row[10]), float(
-                        row[11]), float(
-                            row[12]))
+                row[10]), float(
+                row[11]), float(
+                row[12]))
 
 
 class TurnSignalFrame(object):
     selected_columns = ["value"]
+
     def __init__(self, value):
         self.value = value
 
@@ -267,7 +317,7 @@ class TurnSignalFrame(object):
 
 class VehicleTwistFrame(object):
     selected_columns = ["twist_linear_x", "twist_linear_y", "twist_linear_z", "twist_angular_x", "twist_angular_y",
-                "twist_angular_z"]
+                        "twist_angular_z"]
 
     def __init__(
             self,
@@ -306,13 +356,14 @@ class VehicleTwistFrame(object):
                 row[9]), float(
                 row[10]), float(
                 row[11]), float(
-                    row[13]), float(
-                        row[14]), float(
-                            row[15]))
+                row[13]), float(
+                row[14]), float(
+                row[15]))
 
 
 class VehicleWheelSpeedsFrame(object):
     selected_columns = ["front_left", "front_right", "rear_left", "rear_right"]
+
     def __init__(self, front_left, front_right, rear_left, rear_right):
         self.front_left = front_left
         self.front_right = front_right
@@ -334,7 +385,7 @@ class VehicleWheelSpeedsFrame(object):
                 row[7]), float(
                 row[8]), float(
                 row[9]), float(
-                    row[10]))
+                row[10]))
 
 
 class Frame(object):
@@ -351,11 +402,10 @@ class Frame(object):
             steering_ang_frame=None,
             imu_frame=None,
             vehicle_suspension_frame=None,
-            tire_pressure_frame=None,
-            turn_signal_frame=None,
+            # tire_pressure_frame=None,
+            # turn_signal_frame=None,
             vehicle_twist_frame=None,
             vehicle_wheel_speeds_frame=None):
-
         self.time = time
 
         self.body_pressure = body_pressure_frame
@@ -376,14 +426,13 @@ class Frame(object):
 
         self.vehicle_suspension = vehicle_suspension_frame
 
-        self.tire_pressure = tire_pressure_frame
+        # self.tire_pressure = tire_pressure_frame
 
-        self.turn_signal = turn_signal_frame
+        # self.turn_signal = turn_signal_frame
 
         self.vehicle_twist = vehicle_twist_frame
 
         self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
-
 
     def to_csv_row(self):
         row = []
@@ -401,13 +450,12 @@ class Frame(object):
         row.extend(self.steering_torq.to_csv_row())
         row.extend(self.imu.to_csv_row())
         row.extend(self.vehicle_suspension.to_csv_row())
-        row.extend(self.tire_pressure.to_csv_row())
-        row.extend(self.turn_signal.to_csv_row())
+        # row.extend(self.tire_pressure.to_csv_row())
+        # row.extend(self.turn_signal.to_csv_row())
         row.extend(self.vehicle_twist.to_csv_row())
         row.extend(self.vehicle_wheel_speeds.to_csv_row())
 
         return row
-
 
 
 class Dataset(object):
@@ -431,7 +479,7 @@ class Dataset(object):
         column_names.extend(SteeringTorqueFrame.selected_columns)
         column_names.extend(IMUFrame.selected_columns)
         column_names.extend(VehicleSuspensionFrame.selected_columns)
-        column_names.extend(TirePressureFrame.selected_columns)
+        # column_names.extend(TirePressureFrame.selected_columns)
         column_names.extend(TurnSignalFrame.selected_columns)
         column_names.extend(VehicleTwistFrame.selected_columns)
         column_names.extend(VehicleWheelSpeedsFrame.selected_columns)
@@ -443,8 +491,8 @@ class Dataset(object):
         return pickle.load(open(filename, "rb"))
 
     def to_csv(self, filename="dataset.csv"):
-        with open(filename, 'w', newline='') as file:
-        # with open(filename, 'wb') as file: PYTHON2.7 ONLY
+        # with open(filename, 'w', newline='') as file: PYTHON3 ONLY
+        with open(filename, 'wb') as file:
             file_writer = csv.writer(
                 file,
                 delimiter=',',
@@ -454,6 +502,7 @@ class Dataset(object):
             file_writer.writerow(self.column_names_row())
             for frame in self.frames:
                 file_writer.writerow(frame.to_csv_row())
+
 
 # 11/2/2018 3:30:55.73 PM
 
@@ -468,10 +517,10 @@ def process_title(arr):
     frame_dt = arr[3].strip().split()
     if "." in frame_dt[1]:
         time_string = frame_dt[0] + " " + \
-            frame_dt[1][:-2] + " " + frame_dt[1][-2:]
+                      frame_dt[1][:-2] + " " + frame_dt[1][-2:]
     else:
         time_string = frame_dt[0] + " " + \
-            frame_dt[1][:-2] + ".0 " + frame_dt[1][-2:]
+                      frame_dt[1][:-2] + ".0 " + frame_dt[1][-2:]
     # print(time_string)
     datetime_obj = datetime.strptime(time_string, "%m/%d/%Y %I:%M:%S.%f %p")
     frame_sum = float(arr[-1])
@@ -562,7 +611,7 @@ def extract_data(filename, frame_data):
         while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
             # Where did the 7 * 3600 * 10^9
-            final, curr = (int(elem[0]) - 7 * 3600 * (10**9)), frame_data[j].time
+            final, curr = (int(elem[0]) - 7 * 3600 * (10 ** 9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
             print(diff)
             if diff < -0.05:
@@ -586,23 +635,37 @@ files = {
     'steering_ang': SteeringAngleFrame,
     'steering_torq': SteeringTorqueFrame,
     'suspension': VehicleSuspensionFrame,
-    'tire_press': TirePressureFrame,
-    'turn_sig': TurnSignalFrame,
+    # 'tire_press': TirePressureFrame,
+    # 'turn_sig': TurnSignalFrame,
     'twist': VehicleTwistFrame,
     'wheel_speeds': VehicleWheelSpeedsFrame,
 }
 
-folder = 'cole1/'
-info, final_frames = extract_body_pressure_sensor_m(folder + 'cole_M')
+if not args.folder:
+    print("===Warning===\nNo folder name specified; using ./CSVs as default folder location\n=============")
+    rosbag_path = "./exp_rosbags/"
+else:
+    rosbag_path = "./" + str(args.folder[0]) + "/"
 
-extract_body_pressure_sensor_c(folder + 'cole_C', final_frames)
+if not args.csv_folder:
+    path_to_csvs = rosbag_path + "/CSVs/"
+else:
+    path_to_csvs = rosbag_path + str(args.csv_folder[0])
+
+if not args.no_merge:
+    merge_rosbag_csvs()
+
+bps_name = str(args.bps_name[0]) + '_' if args.bps_name else ""
+
+info, final_frames = extract_body_pressure_sensor_m(rosbag_path + bps_name + 'M')
+
+extract_body_pressure_sensor_c(rosbag_path + bps_name + 'C', final_frames)
 
 for file_name, class_obj in files.items():
-    rows, final_frames = extract_data(folder + file_name, final_frames)
+    rows, final_frames = extract_data(path_to_csvs + file_name, final_frames)
 
     for k in range(len(rows)):
         class_obj.parse(rows[k], final_frames[k])
 
 frames = Dataset(final_frames)
 frames.to_csv()
-
