@@ -482,7 +482,7 @@ class Dataset(object):
         column_names.extend(IMUFrame.selected_columns)
         column_names.extend(VehicleSuspensionFrame.selected_columns)
         # column_names.extend(TirePressureFrame.selected_columns)
-        column_names.extend(TurnSignalFrame.selected_columns)
+        # column_names.extend(TurnSignalFrame.selected_columns)
         column_names.extend(VehicleTwistFrame.selected_columns)
         column_names.extend(VehicleWheelSpeedsFrame.selected_columns)
 
@@ -650,7 +650,7 @@ else:
     rosbag_path = "./" + str(args.folder[0]) + "/"
 
 if not args.csv_folder:
-    csv_path = rosbag_path + "/CSVs/"
+    csv_path = rosbag_path + "CSVs/"
 else:
     csv_path = rosbag_path + str(args.csv_folder[0])
 
