@@ -59,8 +59,7 @@ class BodyPressureSensorFrame(object):
         '''
         self.count, self.datetime, self.sum = process_title(array[0])
         #
-        self.epoch = ((self.datetime - datetime(1970, 1, 1)
-                       ).total_seconds()) * (10 ** 9)
+        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9) + 7 * 3600 * (10 ** 9)
         matrix_to_make = []
         # build a matrix containing all the data for ths frame.
         for elem in array[1:]:
@@ -613,7 +612,7 @@ def extract_data(filename, frame_data):
         while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
             # Where did the 7 * 3600 * 10^9
-            final, curr = (int(elem[0]) - 7 * 3600 * (10 ** 9)), frame_data[j].time
+            final, curr = int(elem[0]), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
             if diff < -0.05:
                 j += 1
