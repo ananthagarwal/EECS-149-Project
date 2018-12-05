@@ -7,11 +7,12 @@ from datetime import datetime
 
 np.set_printoptions(threshold=np.inf)
 
-ap = argparse.ArgumentParser(description="Master CSV generator.")
+ap = argparse.ArgumentParser(description="Master CSV generator. Example usage: python2.7 create_master_csv.py -f cole1 \
+-b pressure-sensor/cole. MUST run bag2csv.py in cole1 first to create rosbag csvs to collate and synchronize.")
 ap.add_argument("-f", nargs=1, dest='folder',
                 help="Folder name of collated rosbags. If not specified, default is ./exp_rosbags/")
 ap.add_argument("-b", nargs=1, dest='bps_name',
-                help="Prefix name of BPS sensor CSVs. If not specified, default is no prefix.")
+                help="Location of BPS sensor M and C CSVs. If not specified, default is pressure-sensor/bps-.")
 ap.add_argument("-c", nargs=1, dest='csv_folder',
                 help="Folder to place CSVs in. If not specified, default is ./exp_rosbags/CSVs/")
 ap.add_argument("-n", action="store_true", dest='no_merge',
@@ -35,13 +36,13 @@ def merge_rosbag_csvs():
     data_prefix = "vehicle_"
 
     for category in data_categories:
-        master_csv = path_to_csvs + "/" + category + ".csv"
+        master_csv = csv_path + "/" + category + ".csv"
         with open(master_csv, "a") as fout:
-            for input_folder in os.listdir(path_to_csvs):
+            for input_folder in os.listdir(csv_path):
                 if input_folder.startswith(b'.'):
                     continue
                 csv_name = data_prefix + category + "-" + input_folder + ".csv"
-                file_path = path_to_csvs + "/" + input_folder + "/" + csv_name
+                file_path = csv_path + "/" + input_folder + "/" + csv_name
                 if os.path.isfile(file_path):
                     with open(file_path) as f:
                         f.next()
@@ -68,7 +69,7 @@ class BodyPressureSensorFrame(object):
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [self.epoch, self.mat, self.cog]
+        return [self.mat, self.cog]
 
 
 class AcceleratorPedalFrame(object):
@@ -613,7 +614,6 @@ def extract_data(filename, frame_data):
             # Where did the 7 * 3600 * 10^9
             final, curr = (int(elem[0]) - 7 * 3600 * (10 ** 9)), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
-            print(diff)
             if diff < -0.05:
                 j += 1
             elif abs(diff) < 0.05:
@@ -622,6 +622,7 @@ def extract_data(filename, frame_data):
                 i, j = i + 1, j + 1
             else:
                 i += 1
+    print("Finished synchronizing with " + file_name + ". Total data points: ")
     print(len(sync_vec_data), len(sync_frame_data))
     return sync_vec_data, sync_frame_data
 
@@ -648,24 +649,24 @@ else:
     rosbag_path = "./" + str(args.folder[0]) + "/"
 
 if not args.csv_folder:
-    path_to_csvs = rosbag_path + "/CSVs/"
+    csv_path = rosbag_path + "/CSVs/"
 else:
-    path_to_csvs = rosbag_path + str(args.csv_folder[0])
+    csv_path = rosbag_path + str(args.csv_folder[0])
 
 if not args.no_merge:
     merge_rosbag_csvs()
 
-bps_name = str(args.bps_name[0]) + '_' if args.bps_name else ""
+bps_path = rosbag_path + str(args.bps_name[0]) + '_' if args.bps_name else rosbag_path + "pressure-sensor/bsp-"
 
-info, final_frames = extract_body_pressure_sensor_m(rosbag_path + bps_name + 'M')
+info, final_frames = extract_body_pressure_sensor_m(bps_path + 'M')
 
-extract_body_pressure_sensor_c(rosbag_path + bps_name + 'C', final_frames)
+extract_body_pressure_sensor_c(bps_path + 'C', final_frames)
 
 for file_name, class_obj in files.items():
-    rows, final_frames = extract_data(path_to_csvs + file_name, final_frames)
+    rows, final_frames = extract_data(csv_path + file_name, final_frames)
 
     for k in range(len(rows)):
         class_obj.parse(rows[k], final_frames[k])
 
 frames = Dataset(final_frames)
-frames.to_csv()
+frames.to_csv(csv_path + "MASTER.csv")
