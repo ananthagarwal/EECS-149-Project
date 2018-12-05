@@ -68,7 +68,7 @@ class BodyPressureSensorFrame(object):
         self.cog = [0, 0]
 
     def to_csv_row(self):
-        return [self.mat, self.cog]
+        return [self.epoch, self.mat, self.cog]
 
 
 class AcceleratorPedalFrame(object):
