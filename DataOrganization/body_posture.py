@@ -4,6 +4,38 @@ LEFT_TURN_THRESHOLD = 60
 RIGHT_TURN_THRESHOLD = -60
 SPEED_UP_TIME = 3
 MASTER_CSV_INTERVAL = 0.1
+sg_queue = []
+sg_count = 0
+last_state = None
+
+
+def stop_go_count(frame_index):
+    global sg_count, sg_queue, last_state
+    frame = frames[frame_index]
+    throttle = frame.accelerator_pedal.throttle_rate
+    brake = frame.brake_torq.brake_torque_request
+    timestamp = frame.body_pressure.epoch
+
+    if last_state == "ACCEL" and brake > 1:
+        last_state = "BRAKE"
+        sg_count += 1
+        sg_queue.append((last_state, timestamp))
+    elif last_state == "BRAKE" and throttle > 1:
+        last_state = "ACCEL"
+        sg_count += 1
+        sg_queue.append((last_state, timestamp))
+    elif not last_state:
+        last_state = "ACCEL" if throttle > 1 else "BRAKE"
+        sg_count += 1
+        sg_queue.append((last_state, timestamp))
+        # Indicates the previous state; accel or brake.
+
+    while sg_queue:
+        _, time = sg_queue[0]
+        if timestamp - time >= 60:
+            sg_queue.pop(0)
+        else:
+            break
 
 
 def is_right_turn(frame_index):
