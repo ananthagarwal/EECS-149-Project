@@ -446,8 +446,8 @@ class Dataset(object):
         return pickle.load(open(filename, "rb"))
 
     def to_csv(self, filename="dataset.csv"):
-        # with open(filename, 'w', newline='') as file: PYTHON3 ONLY
-        with open(filename, 'wb') as file:
+        with open(filename, 'w') as file:
+        #with open(filename, 'wb') as file:
             file_writer = csv.writer(
                 file,
                 delimiter=',',

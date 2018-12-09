@@ -16,11 +16,11 @@ avg_brake = 0
 
 
 def update_dot_count(frame_index):
+    
     return
 
 
-def update_car_count(frame_index):
-    frame = frames[frame_index]
+def update_car_count(front, back):
     face_cascade = cv2.CascadeClassifier('cars.xml')
     f_gray = cv2.cvtColor(front, cv2.COLOR_BGR2GRAY)
     b_gray = cv2.cvtColor(back, cv2.COLOR_BGR2GRAY)
@@ -88,20 +88,20 @@ def is_left_turn(frame_index):
     return steering_angle > LEFT_TURN_THRESHOLD and (right_wheel_speed - left_wheel_speed) >= 1.0
 
 
-def update_yellow_detect(frame):
+def update_yellow_detect(video_frame):
     # Our operations on the frame come here
 
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(video_frame, cv2.COLOR_BGR2HSV)
 
     black_mask = cv2.inRange(hsv, np.array([0,0,0]), np.array([140,50,120]))
-    res_black = cv2.bitwise_and(frame, frame, mask=black_mask)
+    res_black = cv2.bitwise_and(video_frame, video_frame, mask=black_mask)
 
     cv2.imshow('res', black_mask)
 
     lower_yellow = np.array([5, 50, 50])
     upper_yellow = np.array([15, 255, 255])
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    res_yellow = cv2.bitwise_and(frame, frame, mask=mask)
+    res_yellow = cv2.bitwise_and(video_frame, video_frame, mask=mask)
 
     lower_red = np.array([30, 150, 50])
     upper_red = np.array([255, 255, 180])
@@ -111,7 +111,7 @@ def update_yellow_detect(frame):
 
     mask = cv2.addWeighted(mask1, 1.0, mask2, 1.0, 0.0)
 
-    res_red = cv2.bitwise_and(frame, frame, mask=mask)
+    res_red = cv2.bitwise_and(video_frame, video_frame, mask=mask)
 
     img = cv2.medianBlur(res_yellow, 5)
     cimg = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
@@ -123,7 +123,7 @@ def update_yellow_detect(frame):
 
     boundary = [(500, 40), (800, 330)]
 
-    cv2.rectangle(frame, boundary[0], boundary[1], (255, 0, 0), 2)
+    cv2.rectangle(video_frame, boundary[0], boundary[1], (255, 0, 0), 2)
 
     for c in contours:
         x, y, w, h = cv2.boundingRect(c)
@@ -132,28 +132,27 @@ def update_yellow_detect(frame):
             area = cv2.contourArea(c)
             aspect_ratio = float(w) / h
             #print(area, aspect_ratio)
-            cv2.drawContours(frame, [c], 0, (0, 255, 0), 3)
+            cv2.drawContours(video_frame, [c], 0, (0, 255, 0), 3)
             if 15 < area < 50 and .75 < aspect_ratio < 1.25:
                 approx = cv2.approxPolyDP(c, 0.04 * cv2.arcLength(c, True), True)
                 #print("approx", len(approx))
                 if (len(approx) < 5):
                     print("found", len(approx))
                     #sleep(1)
-                    cv2.drawContours(frame, [c], 0, (0, 255, 0), 3)
+                    cv2.drawContours(video_frame, [c], 0, (0, 255, 0), 3)
                     sleep(10)
 
-    cv2.imshow('detected circles', frame)
+    cv2.imshow('detected circles', video_frame)
 
     # sleep(.05)
 
-def update_traffic_light_behavior(frame_index):
+def update_traffic_light_behavior(frame, video_frame):
     global avg_brake, avg_throttle, throttle_queue, brake_queue
     """
     0 - Cautious
     1 - Aggressive
     """
-    frame = frames[frame_index]
-    if not update_yellow_detect(frame):
+    if not update_yellow_detect(video_frame):
         return 0
 
     throttle = frame.accelerator_pedal.throttle_rate
@@ -286,6 +285,12 @@ def update_traffic_light_type(video_path):
 
 
 frames = Dataset.loader("MASTER.p")
+
+videos = [cv2.VideoCapture("cam1.mp4"), cv2.VideoCapture("cam2.mp4"), cv2.VideoCapture("cam3.mp4"), cv2.VideoCapture("cam4.mp4"),
+          cv2.VideoCapture("cam5.mp4"), cv2.VideoCapture("cam6.mp4"), cv2.VideoCapture("cam7.mp4"), cv2.VideoCapture("cam8.mp4")]
+
+def video_update():
+    v_frames = [v.read() for v in videos]
 
 
 
