@@ -10,11 +10,12 @@ def distance_from_center(x, y, z):
 
 t_s = -1
 
-for topic, msg, t in bag.read_messages(topics=['/velodyne_points']):
+for _, msg, t in bag.read_messages(topics=['/velodyne_points']):
     if t_s == -1:
         t_s = t
     close = 0
     total = 0
+    print(msg)
     for p in pc2.read_points(msg):
         total += 1
         if p[2] < 0 and distance_from_center(p[0],p[1],p[2]) < 1.4:

@@ -20,11 +20,27 @@ def update_dot_count(frame_index):
 
 
 def update_car_count(frame_index):
-    return
+    frame = frames[frame_index]
+    face_cascade = cv2.CascadeClassifier('cars.xml')
+    f_gray = cv2.cvtColor(front, cv2.COLOR_BGR2GRAY)
+    b_gray = cv2.cvtColor(back, cv2.COLOR_BGR2GRAY)
+
+    f_faces = face_cascade.detectMultiScale(f_gray, 1.3, 2)
+    b_faces = face_cascade.detectMultiScale(b_gray, 1.3, 2)
+
+    return len(f_faces) + len(b_faces)
 
 
 def update_ads(frame_index):
+    frame = frames[frame_index]
 
+    return
+
+
+def update_body_posture(frame_index):
+    """
+    -1 is left, 0 is center, 1 is right
+    """
     return
 
 
@@ -77,8 +93,13 @@ def update_yellow_detect(frame):
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    lower_yellow = np.array([20, 100, 100])
-    upper_yellow = np.array([30, 255, 255])
+    black_mask = cv2.inRange(hsv, np.array([0,0,0]), np.array([140,50,120]))
+    res_black = cv2.bitwise_and(frame, frame, mask=black_mask)
+
+    cv2.imshow('res', black_mask)
+
+    lower_yellow = np.array([5, 50, 50])
+    upper_yellow = np.array([15, 255, 255])
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
     res_yellow = cv2.bitwise_and(frame, frame, mask=mask)
 
@@ -96,11 +117,11 @@ def update_yellow_detect(frame):
     cimg = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
     cimg = cv2.cvtColor(cimg, cv2.COLOR_BGR2GRAY)
 
-    cv2.imshow('res', cimg)
+    # cv2.imshow('res', img)
 
     im2, contours, hierarchy = cv2.findContours(cimg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    boundary = [(400, 40), (900, 300)]
+    boundary = [(500, 40), (800, 330)]
 
     cv2.rectangle(frame, boundary[0], boundary[1], (255, 0, 0), 2)
 
@@ -110,15 +131,20 @@ def update_yellow_detect(frame):
         if x > boundary[0][0] and x + w < boundary[1][0] and y > boundary[0][1] and y + h < boundary[1][1]:
             area = cv2.contourArea(c)
             aspect_ratio = float(w) / h
-            print(aspect_ratio)
-            if 10 < area < 50 and .9 < aspect_ratio < 1.25:
-                cv2.drawContours(frame, [c], 0, (0, 255, 0), 3)
-                sleep(1)
+            #print(area, aspect_ratio)
+            cv2.drawContours(frame, [c], 0, (0, 255, 0), 3)
+            if 15 < area < 50 and .75 < aspect_ratio < 1.25:
+                approx = cv2.approxPolyDP(c, 0.04 * cv2.arcLength(c, True), True)
+                #print("approx", len(approx))
+                if (len(approx) < 5):
+                    print("found", len(approx))
+                    #sleep(1)
+                    cv2.drawContours(frame, [c], 0, (0, 255, 0), 3)
+                    sleep(10)
 
     cv2.imshow('detected circles', frame)
 
-    sleep(.03)
-
+    # sleep(.05)
 
 def update_traffic_light_behavior(frame_index):
     global avg_brake, avg_throttle, throttle_queue, brake_queue

@@ -16,6 +16,8 @@ ap.add_argument("-n", action="store_true", dest='no_merge',
                 help="Skip collating rosbag CSVs. If not specified, default false.")
 ap.add_argument("-r", action="store_true", dest='no_bag_convert',
                 help="Skip converting rosbags to CSVs. If not specified, default false.")
+ap.add_argument("-p", action="store_true", dest='extra_info',
+                help="Also store picture data and LIDAR data in master.csv.")
 
 args = ap.parse_args()
 """
