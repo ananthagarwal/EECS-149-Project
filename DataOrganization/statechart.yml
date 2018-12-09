@@ -1,0 +1,180 @@
+statechart:
+  name: Modeling Driver Behavior
+  preamble: |
+    frame_index = 0
+    sg_count = 0
+    avg_dot_count = 0
+    avg_car_count = 0
+    eec_state = "openRoad"
+    ran_light = False
+    sound_score = 0
+    left_turn = False
+    right_turn = False
+    driver_state = "cautions"
+    aggressive_time = 0
+    body_posture = 0
+    distracted_state = "notDistracted"
+    distracted_time = 0
+  root state:
+    name: active
+    parallel states:
+      - name: External Environmental Context
+        initial: openRoad
+        states:
+          - name: openRoad
+            on entry: |
+              avg_dot_count = s.update_dot_count(frame_index)
+              avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+              sg_count = s.update_stop_go_count(frame_index)
+              is_ads = s.update_ads(vframes[5][1])
+            on exit: |
+              frame_index +=1
+              vframes = s.video_update()
+            transitions:
+              - target: abnormalDrivingState
+                guard: is_ads == True
+                action: eec_state = "abnormalDrivingState"
+              - target: openRoad
+                guard: avg_dot_count <= 150 and avg_car_count <= 2 and not is_ads
+                action: |
+                  eec_state = "openRoad"
+                  avg_dot_count = s.update_dot_count(frame_index)
+                  avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+                  sg_count = s.update_stop_go_count(frame_index)
+                  is_ads = s.update_ads(vframes[5][1])
+              - target: normalTraffic
+                guard: (avg_dot_count > 150 and avg_dot_count <= 500 and (not is_ads)) or (avg_car_count > 2 and avg_car_count <= 10 and (not is_ads)) or (sg_count >= 2 and sg_count <= 5)
+                action: eec_state = "normalTraffic"
+              - target: crowdedTraffic
+                guard: ((avg_dot_count > 500 or avg_car_count > 10) and (not is_ads)) or (sg_count > 5)
+                action: eec_state = "crowdedTraffic"
+          - name: normalTraffic
+            on entry: |
+              avg_dot_count = s.update_dot_count(frame_index)
+              avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+              sg_count = s.update_stop_go_count(frame_index)
+              is_ads = s.update_ads(vframes[5][1])
+            on exit: |
+              frame_index += 1
+              vframes = s.video_update()
+            transitions:
+              - target: abnormalDrivingState
+                guard: is_ads == True
+                action: eec_state = "abnormalDrivingState"
+              - target: normalTraffic
+                guard: (avg_dot_count > 150 and avg_dot_count <= 500) or (avg_car_count > 2 and avg_car_count <= 10) or (not is_ads) and (sg_count >= 2 and sg_count <= 5)
+                action: |
+                  eec_state = "normalTraffic"
+                  avg_dot_count = s.update_dot_count(frame_index)
+                  avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+                  sg_count = s.update_stop_go_count(frame_index)
+                  is_ads = s.update_ads(vframes[5][1])
+              - target: crowdedTraffic
+                guard: avg_dot_count > 500 or avg_car_count > 10 and (not is_ads) and (sg_count > 5)
+                action: eec_state = "crowdedTraffic"
+          - name: abnormalDrivingState
+            on entry: |
+              avg_dot_count = s.update_dot_count(frame_index)
+              avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+              sg_count = s.update_stop_go_count(frame_index)
+              is_ads = s.update_ads(vframes[5][1])
+            on exit: |
+              frame_index += 1
+              vframes = s.video_update()
+            transitions:
+              - target: abnormalDrivingState
+                guard: is_ads == True
+                action: eec_state = "abnormalDrivingState"
+              - target: normalTraffic
+                guard: (avg_dot_count > 150 and avg_dot_count <= 500) or (avg_car_count > 2 and avg_car_count <= 10) and (not is_ads) and (sg_count >= 2 and sg_count <= 5)
+                action: eec_state = "normalTraffic"
+              - target: crowdedTraffic
+                guard: avg_dot_count > 500 or avg_car_count > 10 and (not is_ads) and (sg_count > 5)
+                action: eec_state = "crowdedTraffic"
+          - name: crowdedTraffic
+            on entry: |
+              avg_dot_count = s.update_dot_count(frame_index)
+              avg_car_count = s.update_car_count(vframes[5][1], vframes[6][1])
+              sg_count = s.update_stop_go_count(frame_index)
+              is_ads = s.update_ads(vframes[5][1])
+            on exit: |
+              frame_index += 1
+              vframes = s.video_update()
+            transitions:
+            - target: abnormalDrivingState
+              guard: is_ads == True
+              action: eec_state = "abnormalDrivingState"
+            - target: normalTraffic
+              guard: (avg_dot_count > 150 and avg_dot_count <= 500) or (avg_car_count > 2 and avg_car_count <= 10) and (not is_ads) and (sg_count >= 2 and sg_count <= 5)
+              action: eec_state = "normalTraffic"
+            - target: crowdedTraffic
+              guard: avg_dot_count > 500 or avg_car_count > 10 and (not is_ads) and (sg_count > 5)
+              action: eec_state = "crowdedTraffic"
+      - name: Driver Behavior
+        parallel states:
+          - name: Driver Aggression
+            initial: cautious
+            states:
+              - name: cautious
+                on entry: |
+                  ran_light = s.update_traffic_light_behavior(frame_index, vframes[5][1])
+                transitions:
+                  - target: aggressive
+                    guard: ran_light
+                    action: driver_state = "aggressive"
+                  - target: cautious
+                    guard: not ran_light
+                    action: driver_state = "cautious"
+              - name: aggressive
+                on entry: |
+                  ran_light = s.update_traffic_light_behavior(frame_index, vframes[5][1])
+                transitions:
+                  - target: aggressive
+                    guard: aggressive_time < 300
+                    action: |
+                      driver_state = "aggressive"
+                      aggressive_time += 1
+                  - target: aggressive
+                    guard: ran_light
+                    priority: 1
+                    action: |
+                      driver_state = "aggressive"
+                      aggressive_time = 0
+                  - target: cautious
+                    guard: aggressive_time >= 300
+                    action: |
+                      driver_state = "cautious"
+                      aggressive_time = 0
+          - name: Driver Distraction
+            initial: notDistracted
+            states:
+              - name: distracted
+                on entry: |
+                  body_posture = s.update_body_posture(frame_index)
+                  right_turn = s.is_right_turn(frame_index)
+                  left_turn = s.is_left_turn(frame_index)
+                transitions:
+                - target: notDistracted
+                  guard: (body_posture == 0 and sound_score < 20) or distracted_time > 120
+                  priority: 1
+                  action: |
+                    distracted_time = 0
+                    distracted_state = "notDistracted"
+                - target: distracted
+                  guard: True
+                  action: |
+                    distracted_time += 1
+                    distracted_state = "distracted"
+              - name: notDistracted
+                on entry: |
+                  body_posture = s.update_body_posture(frame_index)
+                  right_turn = s.is_right_turn(frame_index)
+                  left_turn = s.is_left_turn(frame_index)
+                transitions:
+                - target: distracted
+                  guard: (body_posture == 1 and not right_turn) or (body_posture == -1 and not left_turn) or (sound_score > 20)
+                  action: distracted_state = "distracted"
+                  priority: 1
+                - target: notDistracted
+                  guard: True
+                  action: distracted_state = "notDistracted"
