@@ -12,7 +12,7 @@ declare timeLength=120
 declare peakThresh=0.6666667
 
 ##Export 8 camera feeds to mp4s
-rm *.bag-cam*.mp4
+rm $rosbag_name"-cam"*".mp4"
 for cam in `seq 4 5`
 do
 	echo $rosbag_name"-cam"$cam$vidType

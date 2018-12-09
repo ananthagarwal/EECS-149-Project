@@ -9,7 +9,8 @@ Use: Place in ROSBAG
 path_to_csvs = "./CSVs"
 data_prefix = "vehicle_"
 
-data_categories = ["steering_ang", "steering_torq", "suspension", "tire_press","acc_ped_eng", "brake_ped", "brake_torq", "gear", "imu_data_raw"]
+data_categories = ["steering_ang", "steering_torq", "suspension", "tire_press","acc_ped_eng",\
+ "brake_ped", "brake_torq", "gear", "imu_data_raw", "twist", "wheel_speeds", "joint", "turn_sig"]
 
 for category in data_categories:
 	master_csv = path_to_csvs + "/" + category + ".csv"
