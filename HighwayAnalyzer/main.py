@@ -1,5 +1,4 @@
 import cv2
-from matplotlib import pyplot as plt
 import numpy as np
 
 
@@ -12,10 +11,6 @@ img_HSV = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
 img_thresh_low = cv2.inRange(img_HSV, np.array([0, 135, 135]), np.array([15, 255, 255])) 
 img_thresh_high = cv2.inRange(img_HSV, np.array([159, 135, 135]), np.array([179, 255, 255]))
 img_thresh = cv2.bitwise_or(img_thresh_low, img_thresh_high)
-
-
-
-f, axarr = plt.subplots(nrows=1, ncols=2)
 
 kernel = np.ones((5, 5))
 img_thresh_opened = cv2.morphologyEx(img_thresh, cv2.MORPH_OPEN, kernel)
