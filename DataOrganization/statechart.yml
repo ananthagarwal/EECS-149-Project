@@ -100,7 +100,7 @@ statechart:
               - name: cautious
                 on entry: |
                   ran_light = s.update_traffic_light_behavior(frame_index)
-                on exit: frame_index += 1
+#                on exit: frame_index += 1
                 transitions:
                   - target: aggressive
                     guard: ran_light
@@ -111,7 +111,7 @@ statechart:
               - name: aggressive
                 on entry: |
                   ran_light = s.update_traffic_light_behavior(frame_index)
-                on exit: frame_index += 1
+#                on exit: frame_index += 1
                 transitions:
                   - target: aggressive
                     guard: aggressive_time < 300
@@ -137,7 +137,7 @@ statechart:
                   body_posture = s.update_body_posture(frame_index)
                   right_turn = s.is_right_turn(frame_index)
                   left_turn = s.is_left_turn(frame_index)
-                on exit: frame_index += 1
+#                on exit: frame_index += 1
                 transitions:
                 - target: notDistracted
                   guard: (body_posture == 0 and sound_score < 20) or distracted_time > 120

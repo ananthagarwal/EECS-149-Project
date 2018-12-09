@@ -306,11 +306,11 @@ interpreter = Interpreter(statechart, initial_context={'s': StateMachine})
 print(export_to_plantuml(statechart))
 
 print(len(frames))
-#
-# for i in range(len(frames)):
-#     interpreter.execute_once()
-#     print(interpreter.configuration)
-#     print(i)
+
+for i in range(len(frames)):
+    interpreter.execute_once()
+    print(interpreter.configuration)
+    print(i)
 """
     avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
                         range(SPEED_UP_TIME / MASTER_CSV_INTERVAL)]) // (SPEED_UP_TIME / MASTER_CSV_INTERVAL)
