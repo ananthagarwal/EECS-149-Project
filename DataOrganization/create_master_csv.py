@@ -38,7 +38,8 @@ def merge_rosbag_csvs():
         master_csv = csv_path + "/" + category + ".csv"
         with open(master_csv, "a") as fout:
             for input_folder in os.listdir(csv_path):
-                if input_folder.startswith(b'.'):
+                #if input_folder.startswith(b'.'):
+                if input_folder.startswith('.'):
                     continue
                 csv_name = data_prefix + category + "-" + input_folder + ".csv"
                 file_path = csv_path + "/" + input_folder + "/" + csv_name
