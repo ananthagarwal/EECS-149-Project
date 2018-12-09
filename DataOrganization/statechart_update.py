@@ -154,7 +154,7 @@ def update_traffic_light_behavior(frame_index):
     """
     frame = frames[frame_index]
     if not update_yellow_detect(frame):
-        return
+        return 0
 
     throttle = frame.accelerator_pedal.throttle_rate
     brake = frame.brake_torq.brake_torque_request
@@ -166,14 +166,20 @@ def update_traffic_light_behavior(frame_index):
     if len(throttle_queue) >= SPEED_UP_TIME / MASTER_CSV_INTERVAL:
         # Default behavior: Slow down upon seeing the yellow light. Expected, cautious.
         if avg_brake > brake_queue[0] and avg_throttle <= throttle_queue[0]:
+            brake_queue = []
+            throttle_queue = []
             return 0
         # If we speed up after seeing the yellow light, reckless
         elif avg_throttle > throttle_queue[0] and avg_brake <= brake_queue[0]:
+            brake_queue = []
+            throttle_queue = []
             return 1
         else:
+            brake_queue = []
+            throttle_queue = []
             return 1
-        brake_queue = []
-        throttle_queue = []
+    return 0
+        
 
 
 def list_files(path):
