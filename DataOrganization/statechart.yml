@@ -15,6 +15,7 @@ statechart:
     body_posture = 0
     distracted_state = "notDistracted"
     distracted_time = 0
+    is_tailgate = False
   root state:
     name: active
     parallel states:
@@ -130,16 +131,19 @@ statechart:
               - name: cautious
                 on entry: |
                   ran_light = s.update_traffic_light_behavior(frame_index, vframes[5][1])
+                  is_tailgate = s.update_tailgate(frame_index)
                 transitions:
                   - target: aggressive
-                    guard: ran_light
+                    guard: ran_light or is_tailgate
                     action: driver_state = "aggressive"
                   - target: cautious
-                    guard: not ran_light
+                    guard: True
+                    priority: -1
                     action: driver_state = "cautious"
               - name: aggressive
                 on entry: |
                   ran_light = s.update_traffic_light_behavior(frame_index, vframes[5][1])
+                  is_tailgate = s.update_tailgate(frame_index)
                 transitions:
                   - target: aggressive
                     guard: aggressive_time < 300
@@ -147,7 +151,7 @@ statechart:
                       driver_state = "aggressive"
                       aggressive_time += 1
                   - target: aggressive
-                    guard: ran_light
+                    guard: ran_light or is_tailgate
                     priority: 1
                     action: |
                       driver_state = "aggressive"

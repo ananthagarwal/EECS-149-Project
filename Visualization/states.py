@@ -1,6 +1,8 @@
 import cv2
+import pickle
 
-states = ['DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'DAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA', 'NAA']
+states = pickle.load(open('fsm_state.p', 'rb'))
+
 
 d = ['D','N']
 a = ['A','C']
@@ -16,8 +18,9 @@ for i in d:
 images = {n: cv2.imread('fsm/'+n+'.png') for n in names}
 
 height,width,layers=images['DAA'].shape
+fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
 
-video=cv2.VideoWriter('video.avi',-1,10.0,(width,height))
+video=cv2.VideoWriter('video.avi',fourcc,10.0,(width,height))
 
 
 for s in states:

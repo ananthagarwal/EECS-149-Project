@@ -193,6 +193,19 @@ class StateMachine():
         """
         return 0
 
+    def update_tailgate(self, frame_index):
+        frame = frames[frame_index]
+        left_wheel_speed = frame.vehicle_wheel_speeds.front_left
+        right_wheel_speed = frame.vehicle_wheel_speeds.front_right
+        front_close_dots = frame.lidar_frame.front_close_dots
+        front_med_dots = frame.lidar_frame.front_medium_dots
+        front_large_dots = frame.lidar_frame.front_far_dots
+        if (left_wheel_speed + right_wheel_speed) / 2 <= 35:
+            return front_med_dots > 300
+        else:
+            return front_large_dots > 500
+
+
     def update_stop_go_count(self, frame_index):
         # global sg_count, sg_queue
         last_state = self.sg_queue[-1][0] if self.sg_queue else None
@@ -328,10 +341,10 @@ for i in range(len(frames)):
     #print(interpreter.context['avg_car_count'])
     #print(interpreter.context['sg_count'])
 
-    result.append(interpreter.configuration[-1][0].upper()+interpreter.configuration[-2][0].upper()+interpreter.configuration[-3].upper())
+    result.append(interpreter.configuration[-1][0].upper()+interpreter.configuration[-2][0].upper()+interpreter.configuration[-3][0].upper())
 
 
-with open('fsm_state', 'wb') as p_file:
+with open('fsm_state.p', 'wb') as p_file:
     pickle.dump(result, p_file, protocol=2)
 
 """

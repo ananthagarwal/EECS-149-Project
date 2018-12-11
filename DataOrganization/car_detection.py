@@ -38,7 +38,7 @@ with open('lidar.csv', 'w') as lidar_file:
                     close += 1
 
                 #front_close_dot_num
-                if p[1] > -1.4 and p[1] < 1.4 and p[2] < 0:
+                if p[1] > -1.4 and p[1] < 1.4 and p[2] > -1.6 and p[2] < 0:
                     if p[0] <= 5.4 and p[0] > 1.4:
                         front_close_dot_num += 1
                     elif p[0] > 5.4 and p[0] <= 9.4:
