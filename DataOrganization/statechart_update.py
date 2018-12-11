@@ -20,6 +20,7 @@ class StateMachine():
     traffic_run_queue = []
     throttle_queue = []
     brake_queue = []
+    dot_queue = []
     avg_throttle = 0
     avg_brake = 0
 
@@ -86,7 +87,12 @@ class StateMachine():
 
 
     def update_dot_count(self, frame_index):
-        return 1
+        frame = frames[frame_index]
+        dot_count = frame.lidar_frame.close
+        self.dot_queue.append(dot_count)
+        if len(self.dot_queue) > 50:
+            self.dot_queue.pop(0)
+        return sum(self.dot_queue) / len(self.dot_queue)
 
     def update_car_count(self, front, back):
         face_cascade = cv2.CascadeClassifier('cars.xml')
@@ -181,7 +187,7 @@ class StateMachine():
         return len(cones)
 
     def update_ads(self, video_frame):
-        return self.num_traffic_cones(video_frame) > 1
+        return self.num_traffic_cones(video_frame) >= 1
 
 
     def update_body_posture(self, frame_index):

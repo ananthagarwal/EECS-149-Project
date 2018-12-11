@@ -1,15 +1,31 @@
 import sensor_msgs.point_cloud2 as pc2
 import rosbag
 import csv
+import os
 
-bag = rosbag.Bag('turn_analyze/2018-11-19-12-54-56_11.bag')
-
+path = './cole-driving-downtown'
 
 def distance_from_center(x, y, z):
     return (x**2 + y**2 + z**2)**.5
 
 with open('lidar.csv', 'w') as lidar_file:
-    bags = []
+    file_writer = csv.writer(
+        lidar_file,
+        delimiter=',',
+        quotechar='"',
+        quoting=csv.QUOTE_MINIMAL)
+
+    file_writer.writerow(["rosbag_time", "close", "front close", "front medium", "front far"])
+
+    bags = ['./cole-driving-downtown/2018-11-19-12-48-56_5.bag']
+
+    #for filename in os.listdir(path):
+       # if filename.endswith('.bag'):
+           # bags.append(path+'/'+filename)
+    bags.sort()
+
+    bags = [rosbag.Bag(b) for b in bags]
+
     for b in bags:
         for _, msg, t in b.read_messages(topics=['/velodyne_points']):
             close = 0
@@ -30,10 +46,6 @@ with open('lidar.csv', 'w') as lidar_file:
                     elif p[0] > 9.4:
                         front_far_dot_num += 1
 
-            file_writer = csv.writer(
-                lidar_file,
-                delimiter=',',
-                quotechar='"',
-                quoting=csv.QUOTE_MINIMAL)
 
-            file_writer.writerow([t, front_close_dot_num, front_medium_dot_num, front_far_dot_num])
+
+            file_writer.writerow([t, close, front_close_dot_num, front_medium_dot_num, front_far_dot_num])
