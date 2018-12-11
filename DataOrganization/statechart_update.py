@@ -3,6 +3,7 @@ import cv2
 import os
 import numpy as np
 from time import sleep
+import pickle
 
 from sismic.io import import_from_yaml, export_to_plantuml
 from sismic.interpreter import Interpreter
@@ -36,7 +37,6 @@ class StateMachine():
         black_mask = cv2.inRange(hsv, np.array([0, 0, 0]), np.array([140, 50, 120]))
         res_black = cv2.bitwise_and(video_frame, video_frame, mask=black_mask)
 
-        cv2.imshow('res', black_mask)
 
         lower_yellow = np.array([5, 50, 50])
         upper_yellow = np.array([15, 255, 255])
@@ -56,8 +56,6 @@ class StateMachine():
         img = cv2.medianBlur(res_yellow, 5)
         cimg = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
         cimg = cv2.cvtColor(cimg, cv2.COLOR_BGR2GRAY)
-
-        # cv2.imshow('res', img)
 
         im2, contours, hierarchy = cv2.findContours(cimg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -83,12 +81,11 @@ class StateMachine():
                         #cv2.drawContours(video_frame, [c], 0, (0, 255, 0), 3)
                         #sleep(10)
         return 0
-        #cv2.imshow('detected circles', video_frame)
 
 
     def update_dot_count(self, frame_index):
         frame = frames[frame_index]
-        dot_count = frame.lidar_frame.close
+        dot_count = frame.lidar_frame.close_dots
         self.dot_queue.append(dot_count)
         if len(self.dot_queue) > 50:
             self.dot_queue.pop(0)
@@ -321,13 +318,21 @@ print(export_to_plantuml(statechart))
 
 print(len(frames))
 
+result = []
+
 for i in range(len(frames)):
     interpreter.execute_once()
 
-    print(interpreter.configuration)
+    #print(interpreter.configuration)
     print(i)
-    print(interpreter.context['avg_car_count'])
-    print(interpreter.context['sg_count'])
+    #print(interpreter.context['avg_car_count'])
+    #print(interpreter.context['sg_count'])
+
+    result.append(interpreter.configuration[-1][0].upper()+interpreter.configuration[-2][0].upper()+interpreter.configuration[-3].upper())
+
+
+with open('fsm_state', 'wb') as p_file:
+    pickle.dump(result, p_file, protocol=2)
 
 """
     avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
