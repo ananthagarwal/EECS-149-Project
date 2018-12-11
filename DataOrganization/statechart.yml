@@ -44,7 +44,7 @@ statechart:
                 guard: (avg_dot_count > 150 and avg_dot_count <= 500 and (not is_ads)) or (avg_car_count > 2 and avg_car_count <= 10 and (not is_ads)) or (sg_count >= 2 and sg_count <= 5)
                 action: eec_state = "normalTraffic"
               - target: crowdedTraffic
-                guard: ((avg_dot_count > 500 or avg_car_count > 10) or (sg_count > 5)
+                guard: (avg_dot_count > 500 or avg_car_count > 10) or (sg_count > 5)
                 action: eec_state = "crowdedTraffic"
           - name: normalTraffic
             on entry: |

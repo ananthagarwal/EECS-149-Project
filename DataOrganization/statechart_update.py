@@ -199,7 +199,7 @@ class StateMachine():
         throttle = frame.accelerator_pedal.throttle_rate
         brake = frame.brake_torq.brake_torque_request
         timestamp = frame.body_pressure.epoch/10**9
-        print(throttle, brake)
+        # print(throttle, brake)
         if last_state == "ACCEL" and brake > 1:
             self.sg_count += 1
             self.sg_queue.append(("BRAKE", timestamp))
@@ -214,7 +214,7 @@ class StateMachine():
         while self.sg_queue:
             _, time = self.sg_queue[0]
             # TODO: REAL TIME
-            if timestamp - time >= 60:
+            if timestamp - time >= 6:
                 self.sg_queue.pop(0)
                 self.sg_count -= 1
             else:
@@ -319,15 +319,11 @@ print(len(frames))
 
 for i in range(len(frames)):
     interpreter.execute_once()
+
     print(interpreter.configuration)
-    print(i)
-<<<<<<< HEAD
-=======
+    print(interpreter.context['frame_index'])
     print(interpreter.context['avg_car_count'])
     print(interpreter.context['sg_count'])
-
-
->>>>>>> 809dc1675d7fe6de35035b2bf68a94e1ebd7a590
 """
     avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
                         range(SPEED_UP_TIME / MASTER_CSV_INTERVAL)]) // (SPEED_UP_TIME / MASTER_CSV_INTERVAL)
