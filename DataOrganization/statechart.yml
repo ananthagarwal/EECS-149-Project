@@ -56,6 +56,9 @@ statechart:
               frame_index += 1
               vframes = s.video_update()
             transitions:
+              - target: openRoad
+                guard: (avg_dot_count < 150 and (not is_ads)) or (avg_car_count <= 2)
+                action: eec_state = "openRoad"
               - target: abnormalDrivingState
                 guard: is_ads == True
                 priority: 1
@@ -78,6 +81,9 @@ statechart:
               frame_index += 1
               vframes = s.video_update()
             transitions:
+              - target: openRoad
+                guard: (avg_dot_count < 150 and (not is_ads)) or (avg_car_count <= 2)
+                action: eec_state = "openRoad"
               - target: abnormalDrivingState
                 guard: is_ads
                 priority: 1
@@ -99,6 +105,9 @@ statechart:
               frame_index += 1
               vframes = s.video_update()
             transitions:
+            - target: openRoad
+              guard: (avg_dot_count < 150 and (not is_ads)) or (avg_car_count <= 2)
+              action: eec_state = "openRoad"
             - target: abnormalDrivingState
               guard: is_ads == True
               action: eec_state = "abnormalDrivingState"

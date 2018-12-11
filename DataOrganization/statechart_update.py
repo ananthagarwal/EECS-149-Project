@@ -183,8 +183,6 @@ class StateMachine():
     def update_ads(self, video_frame):
         return self.num_traffic_cones(video_frame) > 1
 
-    def prin(self):
-        print("HELLO")
 
     def update_body_posture(self, frame_index):
         """
@@ -213,8 +211,8 @@ class StateMachine():
 
         while self.sg_queue:
             _, time = self.sg_queue[0]
-            # TODO: REAL TIME
-            if timestamp - time >= 6:
+
+            if timestamp - time >= 60:
                 self.sg_queue.pop(0)
                 self.sg_count -= 1
             else:
@@ -321,9 +319,10 @@ for i in range(len(frames)):
     interpreter.execute_once()
 
     print(interpreter.configuration)
-    print(interpreter.context['frame_index'])
+    print(i)
     print(interpreter.context['avg_car_count'])
     print(interpreter.context['sg_count'])
+
 """
     avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
                         range(SPEED_UP_TIME / MASTER_CSV_INTERVAL)]) // (SPEED_UP_TIME / MASTER_CSV_INTERVAL)
