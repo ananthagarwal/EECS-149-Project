@@ -317,7 +317,7 @@ with open('statechart.yml') as f:
     statechart = import_from_yaml(f)
     s = StateMachine()
 interpreter = Interpreter(statechart, initial_context={'s': s, 'vframes': s.video_update()})
-print(export_to_plantuml(statechart))
+# print(export_to_plantuml(statechart))
 
 print(len(frames))
 
@@ -325,9 +325,32 @@ for i in range(len(frames)):
     interpreter.execute_once()
 
     print(interpreter.configuration)
-    print(i)
-    print(interpreter.context['avg_car_count'])
-    print(interpreter.context['sg_count'])
+
+
+def output_alert(eec, aggression, distraction):
+    output = 0
+    if (eec == "openRoad"):
+        output += 0
+    elif (eec == "normalTraffic"):
+        output += 1
+    elif (eec == "crowdedTraffic" or "abnormalDrivingState"):
+        output += 2
+
+    if (aggression == "cautious"):
+        output += 0
+    elif (aggression == "aggressive"):
+        output += 2
+
+    if (distraction == "notDistracted"):
+        output += 0
+    elif (distraction == "distracted"):
+        output += 2
+
+    return output
+
+
+
+
 
 """
     avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
