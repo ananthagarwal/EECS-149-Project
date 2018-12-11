@@ -205,6 +205,23 @@ class IMUFrame(object):
                              [float(i) for i in row[22][1:-1].split(',')])
 
 
+class LidarFrame():
+    selected_columns = ["close_dots", "medium_dots", "far_dots", "is_tailgate"]
+
+    def __init__(self, close_dots, medium_dots, far_dots, is_tailgate):
+        self.close_dots = close_dots
+        self.medium_dots = medium_dots
+        self.far_dots = far_dots
+        self.is_tailgate = is_tailgate
+
+    def to_csv_row(self):
+        return [str(self.close_dots), str(self.medium_dots), str(self.far_dots), str(self.is_tailgate)]
+
+    @classmethod
+    def parse(cls, row, frame):
+        frame.lidar_frame = LidarFrame(int(row[1]), int(row[2]), int(row[3]), bool(row[4]))
+
+
 class VehicleSuspensionFrame(object):
     selected_columns = ["front", "rear"]
 
@@ -359,7 +376,8 @@ class Frame(object):
             # tire_pressure_frame=None,
             # turn_signal_frame=None,
             vehicle_twist_frame=None,
-            vehicle_wheel_speeds_frame=None):
+            vehicle_wheel_speeds_frame=None,
+            lidar_frame=None):
         self.time = time
 
         self.body_pressure = body_pressure_frame
@@ -388,6 +406,8 @@ class Frame(object):
 
         self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
 
+        self.lidar_frame = lidar_frame
+
     def to_csv_row(self):
         row = []
 
@@ -408,6 +428,7 @@ class Frame(object):
         # row.extend(self.turn_signal.to_csv_row())
         row.extend(self.vehicle_twist.to_csv_row())
         row.extend(self.vehicle_wheel_speeds.to_csv_row())
+        row.extend(self.lidar_frame.to_csv_row())
 
         return row
 
@@ -438,7 +459,7 @@ class Dataset(object):
         # column_names.extend(TurnSignalFrame.selected_columns)
         column_names.extend(VehicleTwistFrame.selected_columns)
         column_names.extend(VehicleWheelSpeedsFrame.selected_columns)
-
+        column_names.extend(LidarFrame.selected_columns)
         return column_names
 
     @classmethod

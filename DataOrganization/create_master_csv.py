@@ -31,12 +31,12 @@ to "cole_M.csv" and "cole_C.csv"
 
 def merge_rosbag_csvs():
     data_categories = ["steering_ang", "steering_torq", "suspension", "tire_press", "acc_ped_eng", \
-                       "brake_ped", "brake_torq", "gear", "imu_data_raw", "twist", "wheel_speeds", "turn_sig"]
+                       "brake_ped", "brake_torq", "gear", "imu_data_raw", "twist", "wheel_speeds", "turn_sig", "lidar"]
     data_prefix = "vehicle_"
 
     for category in data_categories:
-        master_csv = csv_path + "/" + category + ".csv"
-        with open(master_csv, "a") as fout:
+        intermediate_csv = csv_path + "/" + category + ".csv"
+        with open(intermediate_csv, "a") as fout:
             for input_folder in os.listdir(csv_path):
                 #if input_folder.startswith(b'.'):
                 if input_folder.startswith('.'):
@@ -57,7 +57,7 @@ def extract_data(filename, frame_data):
     """
     @param filename             Name of vehicle sensor data csv to parse
     @param frame_data           List of frames. Each frame corresponds to all synchronized sensor data
- \
+
     @return synch_vec_data
 
 
@@ -96,6 +96,7 @@ files = {
     'brake_torq': BrakeTorqFrame,
     'gear': GearFrame,
     'imu_data_raw': IMUFrame,
+    'lidar': LidarFrame,
     'steering_ang': SteeringAngleFrame,
     'steering_torq': SteeringTorqueFrame,
     'suspension': VehicleSuspensionFrame,
