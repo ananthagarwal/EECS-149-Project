@@ -44,7 +44,7 @@ statechart:
                 guard: (avg_dot_count > 150 and avg_dot_count <= 500 and (not is_ads)) or (avg_car_count > 2 and avg_car_count <= 10 and (not is_ads)) or (sg_count >= 2 and sg_count <= 5)
                 action: eec_state = "normalTraffic"
               - target: crowdedTraffic
-                guard: ((avg_dot_count > 500 or avg_car_count > 10) or (sg_count > 5)
+                guard: avg_dot_count > 500 or avg_car_count > 10 or sg_count > 5
                 action: eec_state = "crowdedTraffic"
           - name: normalTraffic
             on entry: |
@@ -66,10 +66,9 @@ statechart:
               - target: normalTraffic
                 guard: True
                 priority: -1
-                action: |
-                  eec_state = "normalTraffic"
+                action: eec_state = "normalTraffic"
               - target: crowdedTraffic
-                guard: (avg_dot_count > 500 or avg_car_count > 10) and (sg_count > 5)
+                guard: avg_dot_count > 500 or avg_car_count > 10 or sg_count > 5
                 action: eec_state = "crowdedTraffic"
           - name: abnormalDrivingState
             on entry: |
@@ -93,7 +92,7 @@ statechart:
                 priority: -1
                 action: eec_state = "normalTraffic"
               - target: crowdedTraffic
-                guard: avg_dot_count > 500 or avg_car_count > 10 and (sg_count > 5)
+                guard: avg_dot_count > 500 or avg_car_count > 10 or sg_count > 5
                 action: eec_state = "crowdedTraffic"
           - name: crowdedTraffic
             on entry: |
@@ -109,13 +108,15 @@ statechart:
               guard: (avg_dot_count < 150 and (not is_ads)) or (avg_car_count <= 2)
               action: eec_state = "openRoad"
             - target: abnormalDrivingState
-              guard: is_ads == True
+              guard: is_ads
+              priority: 1
               action: eec_state = "abnormalDrivingState"
             - target: normalTraffic
-              guard: (avg_dot_count > 150 and avg_dot_count <= 500) or (avg_car_count > 2 and avg_car_count <= 10) and (not is_ads) and (sg_count >= 2 and sg_count <= 5)
+              guard: (avg_dot_count > 150 and avg_dot_count <= 500 and (not is_ads)) or (avg_car_count > 2 and avg_car_count <= 10 and (not is_ads)) or (sg_count >= 2 and sg_count <= 5)
               action: eec_state = "normalTraffic"
             - target: crowdedTraffic
-              guard: avg_dot_count > 500 or avg_car_count > 10 and (not is_ads) and (sg_count > 5)
+              guard: True
+              priority: -1
               action: eec_state = "crowdedTraffic"
       - name: Driver Behavior
         parallel states:
