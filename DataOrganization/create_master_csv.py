@@ -35,16 +35,17 @@ def merge_rosbag_csvs():
     data_prefix = "vehicle_"
 
     for category in data_categories:
-        master_csv = csv_path + "/" + category + ".csv"
-        with open(master_csv, "a") as fout:
+        intermediate_csv = csv_path + category + ".csv"
+        with open(intermediate_csv, "a") as fout:
             for input_folder in os.listdir(csv_path):
-                if input_folder.startswith(b'.'):
+                folder_path = os.path.join(csv_path, input_folder)
+                if input_folder.startswith('.') or os.path.isfile(folder_path):
                     continue
                 csv_name = data_prefix + category + "-" + input_folder + ".csv"
-                file_path = csv_path + "/" + input_folder + "/" + csv_name
+                file_path = os.path.join(folder_path, csv_name)
                 if os.path.isfile(file_path):
                     with open(file_path) as f:
-                        f.next()
+                        f.readline()
                         for line in f:
                             fout.write(line)
 
@@ -56,7 +57,7 @@ def extract_data(filename, frame_data):
     """
     @param filename             Name of vehicle sensor data csv to parse
     @param frame_data           List of frames. Each frame corresponds to all synchronized sensor data
- \
+
     @return synch_vec_data
 
 
@@ -95,6 +96,7 @@ files = {
     'brake_torq': BrakeTorqFrame,
     'gear': GearFrame,
     'imu_data_raw': IMUFrame,
+    'lidar': LidarFrame,
     'steering_ang': SteeringAngleFrame,
     'steering_torq': SteeringTorqueFrame,
     'suspension': VehicleSuspensionFrame,
@@ -125,6 +127,7 @@ info, final_frames = extract_body_pressure_sensor_m(bps_path + 'M')
 extract_body_pressure_sensor_c(bps_path + 'C', final_frames)
 
 print("Body pressure sensor C and M data stored.")
+print(len(final_frames))
 
 for file_name, class_obj in files.items():
     rows, final_frames = extract_data(csv_path + file_name, final_frames)

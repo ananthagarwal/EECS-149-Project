@@ -13,7 +13,7 @@ class BodyPressureSensorFrame(object):
         '''
         self.count, self.datetime, self.sum = process_title(array[0])
         #
-        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9) + 7 * 3600 * (10 ** 9)
+        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9) + 8 * 3600 * (10 ** 9)
         matrix_to_make = []
         # build a matrix containing all the data for ths frame.
         for elem in array[1:]:
@@ -205,6 +205,23 @@ class IMUFrame(object):
                              [float(i) for i in row[22][1:-1].split(',')])
 
 
+class LidarFrame():
+    selected_columns = ["close_dots", "front_close_dots", "front_medium_dots", "front_far_dots"]
+
+    def __init__(self, close_dots, front_close_dots, front_medium_dots, front_far_dots):
+        self.close_dots = close_dots
+        self.front_close_dots = front_close_dots
+        self.front_medium_dots = front_medium_dots
+        self.front_far_dots = front_far_dots
+
+    def to_csv_row(self):
+        return [str(self.close_dots), str(self.front_close_dots), str(self.front_medium_dots), str(self.front_far_dots)]
+
+    @classmethod
+    def parse(cls, row, frame):
+        frame.lidar_frame = LidarFrame(int(row[1]), int(row[2]), int(row[3]), int(row[4]))
+
+
 class VehicleSuspensionFrame(object):
     selected_columns = ["front", "rear"]
 
@@ -359,7 +376,8 @@ class Frame(object):
             # tire_pressure_frame=None,
             # turn_signal_frame=None,
             vehicle_twist_frame=None,
-            vehicle_wheel_speeds_frame=None):
+            vehicle_wheel_speeds_frame=None,
+            lidar_frame=None):
         self.time = time
 
         self.body_pressure = body_pressure_frame
@@ -388,6 +406,8 @@ class Frame(object):
 
         self.vehicle_wheel_speeds = vehicle_wheel_speeds_frame
 
+        self.lidar_frame = lidar_frame
+
     def to_csv_row(self):
         row = []
 
@@ -408,6 +428,7 @@ class Frame(object):
         # row.extend(self.turn_signal.to_csv_row())
         row.extend(self.vehicle_twist.to_csv_row())
         row.extend(self.vehicle_wheel_speeds.to_csv_row())
+        row.extend(self.lidar_frame.to_csv_row())
 
         return row
 
@@ -438,7 +459,7 @@ class Dataset(object):
         # column_names.extend(TurnSignalFrame.selected_columns)
         column_names.extend(VehicleTwistFrame.selected_columns)
         column_names.extend(VehicleWheelSpeedsFrame.selected_columns)
-
+        column_names.extend(LidarFrame.selected_columns)
         return column_names
 
     @classmethod
@@ -446,8 +467,8 @@ class Dataset(object):
         return pickle.load(open(filename, "rb"))
 
     def to_csv(self, filename="dataset.csv"):
-        # with open(filename, 'w', newline='') as file: PYTHON3 ONLY
-        with open(filename, 'wb') as file:
+        with open(filename, 'w') as file:
+        #with open(filename, 'wb') as file:
             file_writer = csv.writer(
                 file,
                 delimiter=',',
@@ -487,13 +508,17 @@ def extract_body_pressure_sensor_m(filename):
     with open(filename + '.csv') as csv_file:
         csv_reader, i = csv.reader(csv_file, delimiter=','), 0
         dataset_info, current_frame, all_frames = {}, [], []
+        intro = True
         for elem in csv_reader:
-            if i < 32:
+            if elem and intro:
                 # Builds a dictionary structure of BPS metadata, e.g. DATA_TYPE: MOVIE, MAP_INDEX: 0
-                if elem:
-                    raw_info = elem[0].split()
-                    dataset_info[raw_info[0]] = raw_info[1:]
+                raw_info = elem[0].split()
+                dataset_info[raw_info[0]] = raw_info[1:]
+                print(elem)
             else:
+                if intro:
+                    intro = False
+                    continue
                 if elem:
                     if elem[0] != '@@':
                         current_frame.append(elem)
@@ -524,16 +549,18 @@ def extract_body_pressure_sensor_c(filename, frame_data):
     '''
     with open(filename + '.csv') as csv_file:
         csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
+        row_measure, col_measure, intro = 1.016, 1.016, True
         for elem in csv_reader:
-            if i < 30:
-                if i == 11:
-                    row_measure = float(elem[0].split()[1])
-                if i == 12:
-                    col_measure = float(elem[0].split()[1])
+            if elem and intro:
+                continue
             else:
+                if intro:
+                    intro = False
+                    continue
                 if elem[0] != '@@':
                     row_curr, col_curr = float(elem[3]), float(elem[4])
                     # 12/3/2018: Changed to dividing col_curr by col measure
+
                     frame_data[j].body_pressure.cog = [int(round(row_curr / row_measure)),
                                                        int(round(col_curr / col_measure))]
                     j += 1
