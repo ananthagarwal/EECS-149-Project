@@ -19,33 +19,36 @@ def list_files(path):
             files.append(path+'/'+name)
     return files
 
-names = list_files(args.folder[0])
 
-print(names)
+def video_joiner(folder_path):
+    names = list_files(folder_path)
 
-cap = [cv2.VideoCapture(i) for i in names]
+    print(names)
 
-frames = [None] * len(names);
-gray = [None] * len(names);
-ret = [None] * len(names);
+    cap = [cv2.VideoCapture(i) for i in names]
 
-while True:
+    frames = [None] * len(names)
+    gray = [None] * len(names)
+    ret = [None] * len(names)
 
-    for i,c in enumerate(cap):
+    while True:
+
+        for i, c in enumerate(cap):
+            if c is not None:
+                ret[i], frames[i] = c.read()
+
+        for i, f in enumerate(frames):
+            if ret[i] is True:
+                cv2.imshow(names[i], f)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    for c in cap:
         if c is not None:
-            ret[i], frames[i] = c.read();
+            c.release()
+
+    cv2.destroyAllWindows()
 
 
-    for i,f in enumerate(frames):
-        if ret[i] is True:
-            cv2.imshow(names[i], f);
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-       break
-
-
-for c in cap:
-    if c is not None:
-        c.release();
-
-cv2.destroyAllWindows()
+video_joiner(args.folder[0])
