@@ -20,6 +20,7 @@ ap.add_argument("-p", action="store_true", dest='extra_info',
                 help="Also store picture data and LIDAR data in master.csv.")
 
 args = ap.parse_args()
+
 """
 Example usage:
 python2.7 create_master_csv.py -f cole1 -b cole -c CSVs
@@ -34,14 +35,17 @@ def merge_rosbag_csvs():
                        "brake_ped", "brake_torq", "gear", "imu_data_raw", "twist", "wheel_speeds", "turn_sig"]
     data_prefix = "vehicle_"
 
+    # For each data type
     for category in data_categories:
         intermediate_csv = csv_path + category + ".csv"
         with open(intermediate_csv, "a") as fout:
-            for input_folder in os.listdir(csv_path):
-                folder_path = os.path.join(csv_path, input_folder)
-                if input_folder.startswith('.') or os.path.isfile(folder_path):
+            folders = sorted(os.listdir(csv_path))
+            # Go through rosbags sequentially to fill data_type.csv
+            for rosbag_folder in folders:
+                folder_path = os.path.join(csv_path, rosbag_folder)
+                if rosbag_folder.startswith('.') or os.path.isfile(folder_path):
                     continue
-                csv_name = data_prefix + category + "-" + input_folder + ".csv"
+                csv_name = data_prefix + category + "-" + rosbag_folder + ".csv"
                 file_path = os.path.join(folder_path, csv_name)
                 if os.path.isfile(file_path):
                     with open(file_path) as f:
@@ -75,7 +79,7 @@ def extract_data(filename, frame_data):
         while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
             # Where did the 7 * 3600 * 10^9
-            final, curr = int(elem[0]), frame_data[j].time
+            final, curr = int(float(elem[0])), frame_data[j].time
             diff = (curr - final) / (10 ** 9)
             if diff < -0.05:
                 j += 1

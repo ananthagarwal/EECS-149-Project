@@ -432,6 +432,7 @@ class Frame(object):
 
         return row
 
+
 class Dataset(object):
 
     def __init__(self, frames=[]):
@@ -467,7 +468,7 @@ class Dataset(object):
 
     def to_csv(self, filename="dataset.csv"):
         with open(filename, 'w') as file:
-        #with open(filename, 'wb') as file:
+            # with open(filename, 'wb') as file:
             file_writer = csv.writer(
                 file,
                 delimiter=',',
@@ -477,6 +478,8 @@ class Dataset(object):
             file_writer.writerow(self.column_names_row())
             for frame in self.frames:
                 file_writer.writerow(frame.to_csv_row())
+
+
 """ 
 class BodyPressureSensorFrame(object):
     def __init__(self, array):
@@ -504,6 +507,7 @@ Important Things to Extract:
 
 """
 
+
 def extract_body_pressure_sensor_m(filename):
     with open(filename + '.csv') as csv_file:
         csv_reader, i = csv.reader(csv_file, delimiter=','), 0
@@ -526,6 +530,7 @@ def extract_body_pressure_sensor_m(filename):
 
     return dataset_info, all_frames
 
+
 def extract_body_pressure_sensor_c(filename, frame_data):
     with open(filename + '.csv') as csv_file:
         csv_reader, i, j = csv.reader(csv_file, delimiter=','), 0, 0
@@ -540,7 +545,7 @@ def extract_body_pressure_sensor_c(filename, frame_data):
                     row_curr, col_curr = float(elem[3]), float(elem[4])
                     # 12/3/2018: Changed to dividing col_curr by col measure
                     frame_data[j].cog = [int(round(row_curr / row_measure)),
-                    					int(round(col_curr / col_measure))]
+                                         int(round(col_curr / col_measure))]
                     j += 1
             i += 1
 
@@ -554,100 +559,100 @@ def extract_body_pressure_sensor_c(filename, frame_data):
 # # extract_body_pressure_sensor_c("turning_2_C", f)
 
 def baseline(array_frames, count):
-	sum_matrix, sum_row_cog, sum_col_cog, i = array_frames[0].body_pressure.mat, array_frames[0].body_pressure.cog[0], array_frames[0].body_pressure.cog[1], 1
-	while i < count:
-		sum_matrix += array_frames[i].body_pressure.mat
-		sum_row_cog += array_frames[i].body_pressure.cog[0]
-		sum_col_cog += array_frames[i].body_pressure.cog[1]
-		i += 1
-	baseline, cog_avg = sum_matrix / count, [int(sum_row_cog / count), int(sum_col_cog / count)]
-	left, right = baseline[:, :cog_avg[1]], baseline[:, cog_avg[1]:]
-	tp_left, tp_right = left.sum(), right.sum()
-	return baseline, cog_avg, 3 * abs(tp_left - tp_right)
+    sum_matrix, sum_row_cog, sum_col_cog, i = array_frames[0].body_pressure.mat, array_frames[0].body_pressure.cog[0], \
+                                              array_frames[0].body_pressure.cog[1], 1
+    while i < count:
+        sum_matrix += array_frames[i].body_pressure.mat
+        sum_row_cog += array_frames[i].body_pressure.cog[0]
+        sum_col_cog += array_frames[i].body_pressure.cog[1]
+        i += 1
+    baseline, cog_avg = sum_matrix / count, [int(sum_row_cog / count), int(sum_col_cog / count)]
+    left, right = baseline[:, :cog_avg[1]], baseline[:, cog_avg[1]:]
+    tp_left, tp_right = left.sum(), right.sum()
+    return baseline, cog_avg, 3 * abs(tp_left - tp_right)
+
 
 def check_most(lst, x, c):
-	counter = c
-	for elem in lst:
-		if elem != x:
-			counter -= 1
-		if counter <= 0:
-			return False
-	return True
+    counter = c
+    for elem in lst:
+        if elem != x:
+            counter -= 1
+        if counter <= 0:
+            return False
+    return True
+
 
 def assign_fill(lst, count, item):
-	i = -1
-	while abs(i) <= count:
-		lst[i]= item
-		i -= 1
+    i = -1
+    while abs(i) <= count:
+        lst[i] = item
+        i -= 1
+
 
 def emphasis(curr_frame, bl_count):
-	bl, cog, th = baseline(array_frames, bl_count)
-	to_return, c_count = [], bl_count
+    bl, cog, th = baseline(array_frames, bl_count)
+    to_return, c_count = [], bl_count
 
-	# for curr_frame in array_frames:
+    # for curr_frame in array_frames:
 
-	mat = curr_frame.body_pressure.mat - bl
-	left, right = mat[:, :cog[1]], mat[:, cog[1]:]
-	tp_left, tp_right = left.sum(), right.sum()
-	
-	if (abs(tp_left - tp_right)) <= th:
-		# to_return.append(0)
-		return 0
-	elif tp_left > tp_right:
-		# to_return.append(1)
-		return 1
-	else:
-		# to_return.append(-1)
-		return -1
-		# if len(to_return) > c_count:
-		# 	if check_most(to_return[-bl_count:], -1, 1) or check_most(to_return[-bl_count:], 1, 1):
-				# assign_fill(to_return, c_count, 0)
-				# bl, cog, th = baseline(array_frames[-bl_count:], bl_count)
+    mat = curr_frame.body_pressure.mat - bl
+    left, right = mat[:, :cog[1]], mat[:, cog[1]:]
+    tp_left, tp_right = left.sum(), right.sum()
 
-	# return to_return
+    if (abs(tp_left - tp_right)) <= th:
+        # to_return.append(0)
+        return 0
+    elif tp_left > tp_right:
+        # to_return.append(1)
+        return 1
+    else:
+        # to_return.append(-1)
+        return -1
+    # if len(to_return) > c_count:
+    # 	if check_most(to_return[-bl_count:], -1, 1) or check_most(to_return[-bl_count:], 1, 1):
+    # assign_fill(to_return, c_count, 0)
+    # bl, cog, th = baseline(array_frames[-bl_count:], bl_count)
+
+
+# return to_return
+
 
 def emp(curr_frame, bl, cog, th):
+    # for curr_frame in array_frames:
 
-	# for curr_frame in array_frames:
+    mat = curr_frame.body_pressure.mat - bl
+    left, right = mat[:, :cog[1]], mat[:, cog[1]:]
+    tp_left, tp_right = left.sum(), right.sum()
 
-	mat = curr_frame.body_pressure.mat - bl
-	left, right = mat[:, :cog[1]], mat[:, cog[1]:]
-	tp_left, tp_right = left.sum(), right.sum()
-	
-	if (abs(tp_left - tp_right)) <= th:
-		# to_return.append(0)
-		return 0
-	elif tp_left > tp_right:
-		# to_return.append(1)
-		return 1
-	else:
-		# to_return.append(-1)
-		return -1
-		# if len(to_return) > c_count:
-		# 	if check_most(to_return[-bl_count:], -1, 1) or check_most(to_return[-bl_count:], 1, 1):
-				# assign_fill(to_return, c_count, 0)
-				# bl, cog, th = baseline(array_frames[-bl_count:], bl_count)
+    if (abs(tp_left - tp_right)) <= th:
+        # to_return.append(0)
+        return 0
+    elif tp_left > tp_right:
+        # to_return.append(1)
+        return 1
+    else:
+        # to_return.append(-1)
+        return -1
+    # if len(to_return) > c_count:
+    # 	if check_most(to_return[-bl_count:], -1, 1) or check_most(to_return[-bl_count:], 1, 1):
+    # assign_fill(to_return, c_count, 0)
+    # bl, cog, th = baseline(array_frames[-bl_count:], bl_count)
 
-	# return to_return
+
+# return to_return
 
 x = Dataset()
 x.loader('MASTER.p')
 bl, cog, th = baseline(x.frames, 50)
 
+
 def give_tilt(frame_index):
-	if frame_index < 50:
-		return 0
-	else:
-		return emp(x.frames[frame_index], bl, cog, th)
+    if frame_index < 50:
+        return 0
+    else:
+        return emp(x.frames[frame_index], bl, cog, th)
 
 
-
-
-
-
-
-
-
-x = (emphasis(b, 200))
+#x = (emphasis(b, 200))
 # y = (emphasis(d, 300))
 # z = (emphasis(f, 300))

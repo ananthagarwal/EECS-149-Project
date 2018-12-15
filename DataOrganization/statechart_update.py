@@ -8,10 +8,26 @@ import pickle
 from sismic.io import import_from_yaml, export_to_plantuml
 from sismic.interpreter import Interpreter
 
+
+def baseline(array_frames, count):
+    sum_matrix, sum_row_cog, sum_col_cog, i = array_frames[0].body_pressure.mat, array_frames[0].body_pressure.cog[
+        0], \
+                                              array_frames[0].body_pressure.cog[1], 1
+    while i < count:
+        sum_matrix += array_frames[i].body_pressure.mat
+        sum_row_cog += array_frames[i].body_pressure.cog[0]
+        sum_col_cog += array_frames[i].body_pressure.cog[1]
+        i += 1
+    baseline, cog_avg = sum_matrix / count, [int(sum_row_cog / count), int(sum_col_cog / count)]
+    left, right = baseline[:, :cog_avg[1]], baseline[:, cog_avg[1]:]
+    tp_left, tp_right = left.sum(), right.sum()
+    return baseline, cog_avg, 3 * abs(tp_left - tp_right)
+
+
 frames = Dataset.loader("MASTER.p")
+bl, cog, th = baseline(frames, 50)
 
 class StateMachine():
-
     LEFT_TURN_THRESHOLD = 60
     RIGHT_TURN_THRESHOLD = -60
     SPEED_UP_TIME = 3
@@ -26,8 +42,9 @@ class StateMachine():
     avg_brake = 0
 
     def video_update(self):
-        v_frames = [v.read() for v in videos]
-        return v_frames
+        # v_frames = [v.read() for v in videos]
+        # return v_frames
+        return first_v_frame
 
     def update_yellow_detect(self, video_frame):
         # Our operations on the frame come here
@@ -186,12 +203,34 @@ class StateMachine():
     def update_ads(self, video_frame):
         return self.num_traffic_cones(video_frame) >= 1
 
+    def emp(self, frame_index):
+        global bl, cog, th
+        # for curr_frame in array_frames:
+        curr_frame = frames[frame_index]
+        mat = curr_frame.body_pressure.mat - bl
+        left, right = mat[:, :cog[1]], mat[:, cog[1]:]
+        tp_left, tp_right = left.sum(), right.sum()
+
+        if (abs(tp_left - tp_right)) <= th:
+            # to_return.append(0)
+            return 0
+        elif tp_left > tp_right:
+            # to_return.append(1)
+            return 1
+        else:
+            # to_return.append(-1)
+            return -1
+
 
     def update_body_posture(self, frame_index):
         """
         -1 is left, 0 is center, 1 is right
         """
-        return 0
+        if frame_index < 50:
+            return 0
+        else:
+            return self.emp(frame_index)
+
 
     def update_tailgate(self, frame_index):
         frame = frames[frame_index]
@@ -201,9 +240,9 @@ class StateMachine():
         front_med_dots = frame.lidar_frame.front_medium_dots
         front_large_dots = frame.lidar_frame.front_far_dots
         if (left_wheel_speed + right_wheel_speed) / 2 <= 35:
-            return front_med_dots > 300
+            return front_med_dots > 1100
         else:
-            return front_large_dots > 500
+            return front_large_dots > 1600
 
 
     def update_stop_go_count(self, frame_index):
@@ -321,7 +360,7 @@ class StateMachine():
 
 videos = [cv2.VideoCapture("cam1.mp4"), cv2.VideoCapture("cam2.mp4"), cv2.VideoCapture("cam3.mp4"), cv2.VideoCapture("cam4.mp4"),
           cv2.VideoCapture("cam5.mp4"), cv2.VideoCapture("cam6.mp4"), cv2.VideoCapture("cam7.mp4"), cv2.VideoCapture("cam8.mp4")]
-
+first_v_frame = [v.read() for v in videos]
 
 with open('statechart.yml') as f:
     statechart = import_from_yaml(f)
@@ -335,11 +374,10 @@ result = []
 
 for i in range(len(frames)):
     interpreter.execute_once()
-
-    #print(interpreter.configuration)
     print(i)
+    #print(interpreter.configuration[-3])
+    #print(interpreter.context['avg_dot_count'])
     #print(interpreter.context['avg_car_count'])
-    #print(interpreter.context['sg_count'])
 
     result.append(interpreter.configuration[-1][0].upper()+interpreter.configuration[-2][0].upper()+interpreter.configuration[-3][0].upper())
 

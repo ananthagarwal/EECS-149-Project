@@ -28,10 +28,11 @@ class BodyPressureSensorFrame(object):
 class AcceleratorPedalFrame(object):
     selected_columns = ["throttle_rate", "throttle_pc", "engine_rpm"]
 
-    def __init__(self, throttle_rate, throttle_pc, engine_rpm):
+    def __init__(self, throttle_rate, throttle_pc, engine_rpm, epoch):
         self.throttle_rate = throttle_rate
         self.throttle_pc = throttle_pc
         self.engine_rpm = engine_rpm
+        self.epoch = epoch
 
     def to_csv_row(self):
         return [str(self.throttle_rate), str(
@@ -42,7 +43,8 @@ class AcceleratorPedalFrame(object):
         frame.accelerator_pedal = AcceleratorPedalFrame(
             float(row[7]),
             float(row[8]),
-            float(row[9])
+            float(row[9]),
+            float(row[0])
         )
 
 
