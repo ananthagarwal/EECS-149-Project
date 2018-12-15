@@ -366,7 +366,7 @@ with open('statechart.yml') as f:
     statechart = import_from_yaml(f)
     s = StateMachine()
 interpreter = Interpreter(statechart, initial_context={'s': s, 'vframes': s.video_update()})
-print(export_to_plantuml(statechart))
+# print(export_to_plantuml(statechart))
 
 print(len(frames))
 
@@ -374,21 +374,28 @@ result = []
 
 for i in range(len(frames)):
     interpreter.execute_once()
-    print(i)
-    #print(interpreter.configuration[-3])
-    #print(interpreter.context['avg_dot_count'])
-    #print(interpreter.context['avg_car_count'])
 
-    result.append(interpreter.configuration[-1][0].upper()+interpreter.configuration[-2][0].upper()+interpreter.configuration[-3][0].upper())
+    print(interpreter.configuration)
 
 
-with open('fsm_state.p', 'wb') as p_file:
-    pickle.dump(result, p_file, protocol=2)
+def output_alert(eec, aggression, distraction):
+    output = 0
+    if (eec == "openRoad"):
+        output += 0
+    elif (eec == "normalTraffic"):
+        output += 1
+    elif (eec == "crowdedTraffic" or "abnormalDrivingState"):
+        output += 2
 
-"""
-    avg_throttle = sum([frames[frame_index + idx].accelerator_pedal.throttle_rate for idx in
-                        range(SPEED_UP_TIME / MASTER_CSV_INTERVAL)]) // (SPEED_UP_TIME / MASTER_CSV_INTERVAL)
-    avg_brake = sum([frames[frame_index + idx].brake_torq.brake_torque_request for idx in
-                     range(SPEED_UP_TIME / MASTER_CSV_INTERVAL)]) // (SPEED_UP_TIME / MASTER_CSV_INTERVAL)
+    if (aggression == "cautious"):
+        output += 0
+    elif (aggression == "aggressive"):
+        output += 2
 
-"""
+    if (distraction == "notDistracted"):
+        output += 0
+    elif (distraction == "distracted"):
+        output += 2
+
+    return output
+
