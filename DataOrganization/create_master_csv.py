@@ -18,7 +18,7 @@ ap.add_argument("-r", action="store_true", dest='no_bag_convert',
                 help="Skip converting rosbags to CSVs. If not specified, default false.")
 ap.add_argument("-p", action="store_true", dest='extra_info',
                 help="Also store picture data and LIDAR data in master.csv.")
-ap.add_argument("-d", action="store_true", dest='daylight_savings',
+ap.add_argument("-d", action="store_false", dest='daylight_savings',
 				help="If flag set, data was recorded in PDT. Otherwise, PST.")
 
 args = ap.parse_args()
