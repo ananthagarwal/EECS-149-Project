@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import csv
 from datetime import datetime
+import time
 
 
 class BodyPressureSensorFrame(object):
@@ -12,8 +13,7 @@ class BodyPressureSensorFrame(object):
         :param array: format is [[Frame i, ..., date/time, ... Raw Sum][data (3, 0, 7, 18, 8, ...)][data (0, 2, 9. 17, ...)] ...]
         '''
         self.count, self.datetime, self.sum = process_title(array[0])
-        #
-        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9) + 8 * 3600 * (10 ** 9)
+        self.epoch = ((self.datetime - datetime(1970, 1, 1)).total_seconds()) * (10 ** 9)
         matrix_to_make = []
         # build a matrix containing all the data for ths frame.
         for elem in array[1:]:
@@ -426,11 +426,11 @@ class Frame(object):
         row.extend(self.steering_torq.to_csv_row())
         row.extend(self.imu.to_csv_row())
         row.extend(self.vehicle_suspension.to_csv_row())
-        # row.extend(self.tire_pressure.to_csv_row())
-        # row.extend(self.turn_signal.to_csv_row())
         row.extend(self.vehicle_twist.to_csv_row())
         row.extend(self.vehicle_wheel_speeds.to_csv_row())
-        row.extend(self.lidar_frame.to_csv_row())
+        # row.extend(self.tire_pressure.to_csv_row())
+        # row.extend(self.turn_signal.to_csv_row())
+        # row.extend(self.lidar_frame.to_csv_row())
 
         return row
 

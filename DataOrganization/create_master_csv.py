@@ -18,12 +18,14 @@ ap.add_argument("-r", action="store_true", dest='no_bag_convert',
                 help="Skip converting rosbags to CSVs. If not specified, default false.")
 ap.add_argument("-p", action="store_true", dest='extra_info',
                 help="Also store picture data and LIDAR data in master.csv.")
+ap.add_argument("-d", action="store_true", dest='daylight_savings',
+				help="If flag set, data was recorded in PDT. Otherwise, PST.")
 
 args = ap.parse_args()
 
 """
 Example usage:
-python2.7 create_master_csv.py -f cole1 -b cole -c CSVs
+python2.7 create_master_csv.py -f cole1 -b cole
 Creates master CSV file dataset.csv containing synchronized data for all sensors in cole1.
 Name of BPS sensor CSVs is overriden from default "M.csv" and "C.csv" 
 to "cole_M.csv" and "cole_C.csv"
@@ -78,9 +80,12 @@ def extract_data(filename, frame_data):
             final_list.append(elem_temp)
         while i < len(final_list) and j < len(frame_data):
             elem = final_list[i]
-            # Where did the 7 * 3600 * 10^9
             final, curr = int(float(elem[0])), frame_data[j].time
-            diff = (curr - final) / (10 ** 9)
+            if args.daylight_savings:
+            	gmt_offset = 8 * 3600 * (10 ** 9)
+            else:
+            	gmt_offset = 7 * 3600 * (10 ** 9)
+            diff = (curr - final + gmt_offset) / (10 ** 9)
             if diff < -0.05:
                 j += 1
             elif abs(diff) < 0.05:
@@ -100,7 +105,7 @@ files = {
     'brake_torq': BrakeTorqFrame,
     'gear': GearFrame,
     'imu_data_raw': IMUFrame,
-    'lidar': LidarFrame,
+    #'lidar': LidarFrame,
     'steering_ang': SteeringAngleFrame,
     'steering_torq': SteeringTorqueFrame,
     'suspension': VehicleSuspensionFrame,
@@ -134,8 +139,11 @@ print("Body pressure sensor C and M data stored.")
 print(len(final_frames))
 
 for file_name, class_obj in files.items():
-    rows, final_frames = extract_data(csv_path + file_name, final_frames)
-
+    try:
+    	rows, final_frames = extract_data(csv_path + file_name, final_frames)
+    except:
+    	print("Error: Data is missing " + file_name + " data. Master CSV creation halted.")
+    	exit()
     for k in range(len(rows)):
         class_obj.parse(rows[k], final_frames[k])
 
