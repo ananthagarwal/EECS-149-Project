@@ -4,6 +4,14 @@ import csv
 from datetime import datetime
 import time
 
+"""
+Definitions of sensor data storage classes. Each Frame represents
+a single frame of data for the various different sensors. 
+
+01/15/19: Updated daylight savings time check. No longer hardcoded
+constant, but a command line flag used in create_master_csv.py in 
+the extract_data method.
+"""
 
 class BodyPressureSensorFrame(object):
     selected_columns = ["epoch", "body_pressure_data", "center_of_gravity"]
